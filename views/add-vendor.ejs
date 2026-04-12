@@ -1,0 +1,188 @@
+<div class="max-w-3xl mx-auto">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-6">Vendor Details</h2>
+
+    <form method="POST" action="/vendors/add" enctype="multipart/form-data" class="space-y-5">
+
+      <!-- Basic Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="form-label">Business Name *</label>
+          <input type="text" name="name" required class="form-input" placeholder="e.g., Sri Lakshmi Vilas Mahal" />
+        </div>
+        <div>
+          <label class="form-label">Mobile Number *</label>
+          <input type="text" name="mobile" required maxlength="10" pattern="\d{10}" class="form-input" placeholder="9876543210" />
+        </div>
+        <div>
+          <label class="form-label">WhatsApp Number</label>
+          <input type="text" name="whatsapp" maxlength="10" class="form-input" placeholder="9876543210" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="form-label">Full Address</label>
+          <textarea name="full_address" rows="2" class="form-input" placeholder="Door no, street, area, city..."></textarea>
+        </div>
+      </div>
+
+      <!-- Category & Location -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">Category *</label>
+          <select name="category_id" required class="form-input">
+            <option value="">Select category...</option>
+            <% for (const c of categories) { %>
+              <option value="<%= c.id %>"><%= c.icon %> <%= c.name %></option>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">City *</label>
+          <select name="city_id" required id="citySelect" class="form-input" onchange="filterRegions(this.value)">
+            <option value="">Select city...</option>
+            <% for (const c of cities) { %>
+              <option value="<%= c.id %>"><%= c.name %></option>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Region / Area</label>
+          <select name="region_id" id="regionSelect" class="form-input">
+            <option value="">All areas</option>
+            <% for (const r of regions) { %>
+              <option value="<%= r.id %>" data-city="<%= r.city_id %>"><%= r.name %></option>
+            <% } %>
+          </select>
+        </div>
+      </div>
+
+      <!-- Membership & Status -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">Membership Tier</label>
+          <select name="membership_tier" class="form-input">
+            <option value="basic">Basic (Free)</option>
+            <option value="silver">Silver (₹2,000)</option>
+            <option value="gold">Gold (₹5,000)</option>
+            <option value="platinum">Platinum (₹25,000)</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select name="status" class="form-input">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Price Range</label>
+          <input type="text" name="amount" class="form-input" placeholder="₹25,000 - ₹75,000" />
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="4" class="form-input" placeholder="Business description, services offered..."></textarea>
+      </div>
+
+      <!-- Coordinates -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Latitude</label>
+          <input type="number" name="latitude" step="any" class="form-input" placeholder="9.9252" />
+        </div>
+        <div>
+          <label class="form-label">Longitude</label>
+          <input type="number" name="longitude" step="any" class="form-input" placeholder="78.1198" />
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="flex flex-wrap gap-6">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="is_verified" value="1" class="w-4 h-4 text-indigo-600 rounded" />
+          <span class="text-sm text-gray-700">✓ Verified</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="is_trusted" value="1" class="w-4 h-4 text-indigo-600 rounded" />
+          <span class="text-sm text-gray-700">Trusted Vendor</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="is_trending" value="1" class="w-4 h-4 text-indigo-600 rounded" />
+          <span class="text-sm text-gray-700">🔥 Trending</span>
+        </label>
+      </div>
+
+      <!-- Photos -->
+      <div>
+        <label class="form-label">Photos <span class="text-gray-400 font-normal">(up to 5 images, max 5MB each)</span></label>
+        <div id="dropzone"
+          class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-400 transition-colors"
+          onclick="document.getElementById('photoInput').click()">
+          <div class="text-3xl mb-2">📷</div>
+          <p class="text-sm text-gray-500">Click to select images or drag & drop</p>
+          <p class="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, GIF · up to 5 files</p>
+          <input id="photoInput" type="file" name="photos" multiple accept="image/*" class="hidden"
+            onchange="previewPhotos(this)" />
+        </div>
+        <div id="photoPreview" class="grid grid-cols-5 gap-2 mt-3 hidden"></div>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors">
+          Add Vendor
+        </button>
+        <a href="/vendors" class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm transition-colors">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function previewPhotos(input) {
+  const files = Array.from(input.files).slice(0, 5);
+  // Re-assign a sliced FileList isn't possible directly, so just warn if > 5
+  const preview = document.getElementById('photoPreview');
+  preview.innerHTML = '';
+  if (!files.length) { preview.classList.add('hidden'); return; }
+  preview.classList.remove('hidden');
+  files.forEach((f, i) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'relative aspect-square rounded-lg overflow-hidden bg-gray-100';
+      div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover" />
+        <span class="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1 rounded">${i+1}</span>`;
+      preview.appendChild(div);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+// Drag & drop support
+const dz = document.getElementById('dropzone');
+if (dz) {
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-indigo-500','bg-indigo-50'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('border-indigo-500','bg-indigo-50'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('border-indigo-500','bg-indigo-50');
+    const input = document.getElementById('photoInput');
+    input.files = e.dataTransfer.files;
+    previewPhotos(input);
+  });
+}
+
+function filterRegions(cityId) {
+  const select = document.getElementById('regionSelect');
+  const options = select.querySelectorAll('option[data-city]');
+  options.forEach(opt => {
+    opt.style.display = (!cityId || opt.dataset.city == cityId) ? '' : 'none';
+  });
+  select.value = '';
+}
+</script>

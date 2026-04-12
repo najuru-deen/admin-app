@@ -1,0 +1,293 @@
+<div class="max-w-4xl space-y-6">
+
+  <!-- DB Configuration -->
+  <div id="db" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center gap-3 mb-1">
+      <h2 class="text-base font-semibold text-gray-800">Supabase Configuration</h2>
+      <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Connected via anon key</span>
+    </div>
+    <p class="text-sm text-gray-500 mb-5">Uses <code class="bg-gray-100 px-1 rounded">@supabase/supabase-js</code> with your project URL and anon key.</p>
+
+    <!-- Setup guide -->
+    <div class="mb-5 p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-sm">
+      <p class="font-semibold text-indigo-800 mb-2">Where to find these values</p>
+      <ol class="list-decimal list-inside space-y-1 text-indigo-700 text-xs">
+        <li>Go to <strong>supabase.com</strong> → your project → <strong>Settings → API</strong></li>
+        <li><strong>Project URL</strong> — copy the URL (e.g. <code class="bg-indigo-100 px-1 rounded">https://xxxx.supabase.co</code>)</li>
+        <li><strong>anon / public key</strong> — copy the key under "Project API keys"</li>
+        <li>Run <code class="bg-indigo-100 px-1 rounded">supabase_schema.sql</code> in <strong>SQL Editor</strong> first, then disable RLS on all vv_ tables</li>
+      </ol>
+    </div>
+
+    <div class="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-600 break-all space-y-1">
+      <div><span class="text-gray-400">URL:</span> <span class="text-indigo-600"><%= config.supabase_url || '(not set)' %></span></div>
+      <div><span class="text-gray-400">Key:</span> <span class="text-indigo-600"><%= config.supabase_key ? config.supabase_key.substring(0,40) + '...' : '(not set)' %></span></div>
+    </div>
+
+    <form method="POST" action="/settings/db" class="space-y-4">
+      <div>
+        <label class="form-label">Project URL</label>
+        <input type="text" name="supabase_url" value="<%= config.supabase_url || '' %>" class="form-input font-mono text-sm"
+          placeholder="https://xxxxxxxxxxxxxxxxxxxx.supabase.co" required />
+      </div>
+      <div>
+        <label class="form-label">Anon Key</label>
+        <input type="text" name="supabase_key" value="<%= config.supabase_key || '' %>" class="form-input font-mono text-sm"
+          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required />
+        <p class="text-xs text-gray-400 mt-1">Found in Supabase → Settings → API → anon / public</p>
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm">Save & Verify</button>
+        <button type="button" id="testBtn" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm">Test Connection</button>
+      </div>
+    </form>
+    <div id="testResult" class="hidden mt-3 p-3 rounded-lg text-sm"></div>
+
+    <div class="mt-5 pt-4 border-t border-gray-100 space-y-2">
+      <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+        ⚠ After saving, restart the server: <code>npm start</code>
+      </p>
+      <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+        Important: Run this in Supabase SQL Editor to allow the anon key to access your tables:
+        <code class="block mt-1 bg-red-100 px-2 py-1 rounded">ALTER TABLE vv_vendors DISABLE ROW LEVEL SECURITY; -- repeat for each vv_ table</code>
+      </p>
+    </div>
+  </div>
+
+  <!-- Admin Users -->
+  <div id="admins" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-1">Admin Users</h2>
+    <p class="text-sm text-gray-500 mb-5">Manage who can access this admin panel.</p>
+
+    <table class="w-full text-sm mb-5">
+      <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-2 text-left rounded-tl-lg">Username</th>
+          <th class="px-4 py-2 text-left">Created</th>
+          <th class="px-4 py-2 text-left rounded-tr-lg">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        <% for (const a of adminUsers) { %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-gray-800">
+              <%= a.username %>
+              <% if (a.username === user.username) { %><span class="ml-2 text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">You</span><% } %>
+            </td>
+            <td class="px-4 py-3 text-gray-400 text-xs"><%= new Date(a.created_at * 1000).toLocaleDateString('en-IN') %></td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="showPasswordModal('<%= a.id %>', '<%= a.username %>')"
+                  class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Change Password</button>
+                <% if (a.username !== user.username) { %>
+                  <form method="POST" action="/settings/admin/<%= a.id %>/delete"
+                        onsubmit="return confirm('Delete admin user <%= a.username %>?')">
+                    <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+                  </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+
+    <!-- Add Admin User -->
+    <div class="border-t border-gray-100 pt-4">
+      <h3 class="text-sm font-medium text-gray-700 mb-3">Add Admin User</h3>
+      <form method="POST" action="/settings/admin/add" class="flex gap-3 items-end">
+        <div>
+          <label class="form-label">Username</label>
+          <input type="text" name="username" required class="form-input w-40" placeholder="username" />
+        </div>
+        <div>
+          <label class="form-label">Password</label>
+          <input type="password" name="password" required class="form-input w-40" placeholder="••••••••" />
+        </div>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add User</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Demo Data -->
+  <div id="demo" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center justify-between mb-1">
+      <div>
+        <h2 class="text-base font-semibold text-gray-800">Demo / Sample Data</h2>
+        <p class="text-sm text-gray-500 mt-0.5">104 demo vendors from the mobile app mockData (all categories, Madurai + Chennai + Coimbatore).</p>
+      </div>
+      <% if (settings.demo_data_enabled === '1') { %>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Enabled</span>
+      <% } else { %>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Disabled</span>
+      <% } %>
+    </div>
+
+    <div class="mt-4 flex items-center gap-4 p-4 rounded-lg <%= settings.demo_data_enabled === '1' ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200' %>">
+      <div class="flex-1 text-sm text-gray-700">
+        <% if (settings.demo_data_enabled === '1') { %>
+          Demo vendors are <strong>visible</strong> in the mobile app. <%= demoCount %> demo records in DB.
+        <% } else { %>
+          Demo vendors are <strong>hidden</strong> from the mobile app. <%= demoCount %> demo records ready to enable.
+        <% } %>
+      </div>
+      <form method="POST" action="/settings/demo/toggle">
+        <button type="submit"
+          class="px-4 py-2 text-sm font-medium rounded-lg <%= settings.demo_data_enabled === '1' ? 'bg-red-100 hover:bg-red-200 text-red-700' : 'bg-green-600 hover:bg-green-700 text-white' %>">
+          <%= settings.demo_data_enabled === '1' ? 'Disable Demo Data' : 'Enable Demo Data' %>
+        </button>
+      </form>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-3">
+      Demo vendors have <code>is_demo=1</code> and are filtered from the API when disabled.
+      Run <code>supabase_schema.sql</code> to seed them into Supabase.
+    </p>
+  </div>
+
+  <!-- Categories -->
+  <div id="categories" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-4">Categories (<%= categories.length %>)</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-5">
+      <% for (const c of categories) { %>
+        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
+          <span class="text-sm"><%= c.icon %> <%= c.name %></span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs <%= c.active ? 'text-green-600' : 'text-gray-400' %>"><%= c.active ? 'Active' : 'Off' %></span>
+            <form method="POST" action="/settings/categories/<%= c.id %>/toggle">
+              <button type="submit" class="text-xs text-gray-500 hover:text-indigo-600">Toggle</button>
+            </form>
+          </div>
+        </div>
+      <% } %>
+    </div>
+    <div class="border-t border-gray-100 pt-4">
+      <h3 class="text-sm font-medium text-gray-700 mb-3">Add Category</h3>
+      <form method="POST" action="/settings/categories/add" class="flex gap-3 items-end">
+        <div>
+          <label class="form-label">Icon</label>
+          <input type="text" name="icon" class="form-input w-16 text-center" placeholder="🏷️" maxlength="2" />
+        </div>
+        <div class="flex-1">
+          <label class="form-label">Category Name</label>
+          <input type="text" name="name" required class="form-input" placeholder="e.g., Wedding Cards" />
+        </div>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cities & Regions -->
+  <div id="cities" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-4">Cities & Regions</h2>
+
+    <!-- Cities -->
+    <div class="mb-5">
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Cities</h3>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <% for (const c of cities) { %>
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+            <span class="text-sm font-medium"><%= c.name %></span>
+            <span class="text-xs <%= c.active ? 'text-green-600' : 'text-gray-400' %>"><%= c.active ? 'Active' : 'Off' %></span>
+            <form method="POST" action="/settings/cities/<%= c.id %>/toggle" class="inline">
+              <button type="submit" class="text-xs text-gray-400 hover:text-indigo-600">⟳</button>
+            </form>
+          </div>
+        <% } %>
+      </div>
+      <form method="POST" action="/settings/cities/add" class="flex gap-3 items-end">
+        <div class="flex-1 max-w-xs">
+          <label class="form-label">New City Name</label>
+          <input type="text" name="name" required class="form-input" placeholder="e.g., Salem" />
+        </div>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add City</button>
+      </form>
+    </div>
+
+    <!-- Regions -->
+    <div id="regions" class="border-t border-gray-100 pt-5">
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Regions (<%= regions.length %>)</h3>
+      <div class="space-y-1 mb-4 max-h-48 overflow-y-auto">
+        <% for (const r of regions) { %>
+          <div class="flex items-center justify-between text-xs py-1 border-b border-gray-50">
+            <span class="font-medium text-gray-700"><%= r.name %></span>
+            <span class="text-gray-400"><%= cities.find(c => c.id == r.city_id)?.name || r.city_id %></span>
+            <span class="text-gray-400 truncate max-w-[200px]"><%= r.areas || '—' %></span>
+          </div>
+        <% } %>
+      </div>
+      <form method="POST" action="/settings/regions/add" class="flex flex-wrap gap-3 items-end">
+        <div>
+          <label class="form-label">City</label>
+          <select name="city_id" required class="form-input">
+            <% for (const c of cities) { %>
+              <option value="<%= c.id %>"><%= c.name %></option>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Region Name</label>
+          <input type="text" name="name" required class="form-input w-40" placeholder="e.g., North Zone" />
+        </div>
+        <div>
+          <label class="form-label">Areas (comma-separated)</label>
+          <input type="text" name="areas" class="form-input w-56" placeholder="Area 1, Area 2, Area 3" />
+        </div>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add Region</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="passwordModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+    <h3 class="text-base font-semibold text-gray-800 mb-4">Change Password for <span id="passwordAdminName" class="text-indigo-600"></span></h3>
+    <form id="passwordForm" method="POST" class="space-y-4">
+      <div>
+        <label class="form-label">New Password</label>
+        <input type="password" name="password" required class="form-input" placeholder="New password" />
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm">Update</button>
+        <button type="button" onclick="document.getElementById('passwordModal').classList.add('hidden')"
+          class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showPasswordModal(adminId, username) {
+  document.getElementById('passwordForm').action = '/settings/admin/' + adminId + '/change-password';
+  document.getElementById('passwordAdminName').textContent = username;
+  document.getElementById('passwordModal').classList.remove('hidden');
+}
+
+// Test connection AJAX
+document.getElementById('testBtn').addEventListener('click', async function() {
+  const resultDiv = document.getElementById('testResult');
+  this.textContent = 'Testing...';
+  this.disabled = true;
+  try {
+    const res = await fetch('/settings/test-db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        supabase_url: document.querySelector('input[name="supabase_url"]').value,
+        supabase_key: document.querySelector('input[name="supabase_key"]').value,
+      }),
+    });
+    const data = await res.json();
+    resultDiv.className = `mt-3 p-3 rounded-lg text-sm ${data.success ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`;
+    resultDiv.textContent = data.message;
+    resultDiv.classList.remove('hidden');
+  } catch(e) {
+    resultDiv.className = 'mt-3 p-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-800';
+    resultDiv.textContent = 'Test failed: ' + e.message;
+    resultDiv.classList.remove('hidden');
+  }
+  this.textContent = 'Test Connection';
+  this.disabled = false;
+});
+</script>

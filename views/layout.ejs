@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> — VV Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#4f46e5', dark: '#3730a3', light: '#818cf8' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/css/custom.css" />
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 min-h-screen bg-slate-900 text-white flex flex-col fixed left-0 top-0 bottom-0 z-30">
+    <!-- Logo -->
+    <div class="px-6 py-5 border-b border-slate-700">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">V</div>
+        <div>
+          <div class="font-bold text-white text-sm leading-tight">VV Admin</div>
+          <div class="text-xs text-slate-400 leading-tight">Veetla Visesanga</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 overflow-y-auto">
+      <ul class="space-y-0.5">
+        <li>
+          <a href="/" class="nav-link <%= currentPath === '/' ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Dashboard
+          </a>
+        </li>
+
+        <li class="pt-3 pb-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">Vendors</span>
+        </li>
+        <li>
+          <a href="/vendors" class="nav-link <%= currentPath === '/vendors' ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            All Vendors
+          </a>
+        </li>
+        <li>
+          <a href="/vendors/pending" class="nav-link <%= currentPath === '/vendors/pending' ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Pending Approval
+          </a>
+        </li>
+        <li>
+          <a href="/vendors/add" class="nav-link <%= currentPath === '/vendors/add' ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Vendor
+          </a>
+        </li>
+
+        <li class="pt-3 pb-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">Management</span>
+        </li>
+        <li>
+          <a href="/subscribers" class="nav-link <%= currentPath.startsWith('/subscribers') ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Subscribers
+          </a>
+        </li>
+        <li>
+          <a href="/history" class="nav-link <%= currentPath.startsWith('/history') ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            Activity History
+          </a>
+        </li>
+        <li>
+          <a href="/settings" class="nav-link <%= currentPath.startsWith('/settings') ? 'active' : '' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Settings
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- User footer -->
+    <div class="px-4 py-3 border-t border-slate-700">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+            <%= user ? user.username.charAt(0).toUpperCase() : 'A' %>
+          </div>
+          <span class="text-sm text-slate-300 truncate max-w-[100px]"><%= user?.username || 'Admin' %></span>
+        </div>
+        <form method="POST" action="/logout">
+          <button type="submit" class="text-slate-400 hover:text-white transition-colors" title="Logout">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+    <!-- Top bar -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+      <h1 class="text-lg font-semibold text-gray-800"><%= title %></h1>
+      <div class="flex items-center gap-3 text-sm text-gray-500">
+        <span>Welcome, <span class="font-medium text-gray-700"><%= user?.username %></span></span>
+      </div>
+    </header>
+
+    <!-- DB config error banner -->
+    <% if (locals.dbError) { %>
+      <div class="mx-6 mt-4 p-3 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg flex items-center gap-2 text-sm">
+        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        <span><strong>Database not configured:</strong> <%= dbError %></span>
+        <a href="/settings#db" class="ml-auto underline font-medium whitespace-nowrap">Open Settings →</a>
+      </div>
+    <% } %>
+
+    <!-- Flash messages -->
+    <% if (success && success.length > 0) { %>
+      <div class="mx-6 mt-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-start gap-2 text-sm" id="flash-success">
+        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        <span><%= success[0] %></span>
+        <button onclick="this.parentElement.remove()" class="ml-auto text-green-600 hover:text-green-800">✕</button>
+      </div>
+    <% } %>
+    <% if (error && error.length > 0) { %>
+      <div class="mx-6 mt-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-start gap-2 text-sm" id="flash-error">
+        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        <span><%= error[0] %></span>
+        <button onclick="this.parentElement.remove()" class="ml-auto text-red-600 hover:text-red-800">✕</button>
+      </div>
+    <% } %>
+
+    <!-- Page body -->
+    <main class="flex-1 p-6">
+      <%- body %>
+    </main>
+  </div>
+
+  <script>
+    // Auto-dismiss flash after 5s
+    setTimeout(() => {
+      ['flash-success','flash-error'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.transition = 'opacity 0.5s', el.style.opacity = '0', setTimeout(() => el.remove(), 500);
+      });
+    }, 5000);
+  </script>
+</body>
+</html>
