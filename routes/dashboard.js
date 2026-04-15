@@ -17,10 +17,14 @@ router.get('/', requireAuth, async (req, res) => {
       { count: activeSubscribers },
       { count: leadsToday },
       { count: totalLeads },
+      { count: pendingReviews },
       { data: paidMemberships },
       { data: tierRows },
       { data: recentVendorsRaw },
       { data: recentLeadsRaw },
+      { data: allLeadTypes },
+      { data: topVendorsRaw },
+      { data: viewSumRows },
     ] = await Promise.all([
       sb.from('vv_vendors').select('*', { count: 'exact', head: true }),
       sb.from('vv_vendors').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -29,6 +33,7 @@ router.get('/', requireAuth, async (req, res) => {
       sb.from('vv_vendors').select('*', { count: 'exact', head: true }).gt('subscription_expires', now),
       sb.from('vv_leads').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
       sb.from('vv_leads').select('*', { count: 'exact', head: true }),
+      sb.from('vv_reviews').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       sb.from('vv_memberships').select('amount').eq('payment_status', 'paid'),
       sb.from('vv_vendors').select('membership_tier').eq('status', 'approved'),
       sb.from('vv_vendors')
@@ -39,6 +44,13 @@ router.get('/', requireAuth, async (req, res) => {
         .select('*, vendor:vv_vendors(name, category:vv_categories(name))')
         .order('created_at', { ascending: false })
         .limit(5),
+      sb.from('vv_leads').select('type'),
+      sb.from('vv_vendors')
+        .select('id, name, view_count, membership_tier, category:vv_categories(name)')
+        .eq('status', 'approved')
+        .order('view_count', { ascending: false })
+        .limit(5),
+      sb.from('vv_vendors').select('view_count').eq('status', 'approved'),
     ]);
 
     const revenue = (paidMemberships || []).reduce((s, m) => s + (Number(m.amount) || 0), 0);
@@ -47,6 +59,14 @@ router.get('/', requireAuth, async (req, res) => {
     for (const r of (tierRows || [])) {
       tierMap[r.membership_tier] = (tierMap[r.membership_tier] || 0) + 1;
     }
+
+    const leadTypeMap = {};
+    for (const l of (allLeadTypes || [])) {
+      const t = l.type || 'other';
+      leadTypeMap[t] = (leadTypeMap[t] || 0) + 1;
+    }
+
+    const totalViews = (viewSumRows || []).reduce((s, r) => s + (r.view_count || 0), 0);
 
     // Flatten nested relations → category_name, city_name etc.
     const recentVendors = (recentVendorsRaw || []).map(v => ({
@@ -63,6 +83,12 @@ router.get('/', requireAuth, async (req, res) => {
       vendor: undefined,
     }));
 
+    const topVendors = (topVendorsRaw || []).map(v => ({
+      ...v,
+      category_name: v.category?.name,
+      category: undefined,
+    }));
+
     res.render('dashboard', {
       title: 'Dashboard',
       stats: {
@@ -73,6 +99,8 @@ router.get('/', requireAuth, async (req, res) => {
         activeSubscribers: activeSubscribers || 0,
         leadsToday:       leadsToday      || 0,
         totalLeads:       totalLeads      || 0,
+        pendingReviews:   pendingReviews  || 0,
+        totalViews:       totalViews,
         revenue:          revenue.toLocaleString('en-IN'),
       },
       tierBreakdown: {
@@ -81,14 +109,20 @@ router.get('/', requireAuth, async (req, res) => {
         gold:     tierMap['gold']     || 0,
         platinum: tierMap['platinum'] || 0,
       },
+      leadTypeBreakdown: {
+        call:      leadTypeMap['call']      || 0,
+        whatsapp:  leadTypeMap['whatsapp']  || 0,
+        enquiry:   leadTypeMap['enquiry']   || 0,
+      },
       recentVendors,
       recentLeads,
+      topVendors,
     });
   } catch (err) {
     console.error('Dashboard error:', err.message);
     res.render('dashboard', {
-      title: 'Dashboard', stats: {}, tierBreakdown: {},
-      recentVendors: [], recentLeads: [], dbError: err.message,
+      title: 'Dashboard', stats: {}, tierBreakdown: {}, leadTypeBreakdown: {},
+      recentVendors: [], recentLeads: [], topVendors: [], dbError: err.message,
     });
   }
 });

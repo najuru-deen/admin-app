@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS vv_vendors (
   amount              TEXT,
   rating              REAL DEFAULT 0,
   rating_count        INTEGER DEFAULT 0,
+  view_count          INTEGER DEFAULT 0,
   whatsapp            TEXT,
   latitude            REAL,
   longitude           REAL,
@@ -193,7 +194,11 @@ ALTER TABLE vv_admin_audit_log DISABLE ROW LEVEL SECURITY;
 -- =============================================================
 
 -- is_demo flag on vendors (1 = sample/demo record)
-ALTER TABLE vv_vendors    ADD COLUMN IF NOT EXISTS is_demo  INTEGER DEFAULT 0;
+ALTER TABLE vv_vendors    ADD COLUMN IF NOT EXISTS is_demo   INTEGER DEFAULT 0;
+
+-- Contact additions
+ALTER TABLE vv_vendors    ADD COLUMN IF NOT EXISTS website   TEXT;
+ALTER TABLE vv_vendors    ADD COLUMN IF NOT EXISTS email     TEXT;
 ALTER TABLE vv_categories ADD COLUMN IF NOT EXISTS name_ta  TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_vv_vendors_is_demo ON vv_vendors(is_demo);
@@ -1038,3 +1043,30 @@ BEGIN
 END $$;
 
 DROP FUNCTION IF EXISTS _vv_add_demo_photo(TEXT, TEXT);
+
+
+-- =============================================================
+-- Reviews & Review Media
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS vv_reviews (
+  id             BIGSERIAL PRIMARY KEY,
+  vendor_id      BIGINT NOT NULL REFERENCES vv_vendors(id) ON DELETE CASCADE,
+  user_mobile    TEXT,
+  reviewer_name  TEXT NOT NULL DEFAULT 'Anonymous',
+  rating         INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  review_text    TEXT,
+  status         TEXT NOT NULL DEFAULT 'pending',   -- pending | approved | rejected
+  created_at     BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS vv_review_media (
+  id         BIGSERIAL PRIMARY KEY,
+  review_id  BIGINT NOT NULL REFERENCES vv_reviews(id) ON DELETE CASCADE,
+  url        TEXT NOT NULL,
+  created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
+);
+
+-- Index for fast lookup by vendor
+CREATE INDEX IF NOT EXISTS idx_vv_reviews_vendor ON vv_reviews(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_vv_reviews_status ON vv_reviews(status);

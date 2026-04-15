@@ -1,0 +1,64 @@
+<%
+  const settingsTabs = [
+    { href: '/settings/cities',     label: 'Cities & Regions', icon: '🗺️' },
+    { href: '/settings/categories', label: 'Categories',        icon: '🏷️' },
+    { href: '/settings/system',     label: 'System',            icon: '⚙️' },
+  ];
+  const activeTab = '/settings/categories';
+%>
+
+<!-- Sub-tabs -->
+<div class="flex gap-1 bg-white rounded-xl border border-gray-100 shadow-sm p-1 mb-6 w-fit">
+  <% settingsTabs.forEach(tab => { %>
+    <a href="<%= tab.href %>"
+      class="px-4 py-2 rounded-lg text-sm font-medium transition-colors <%= tab.href === activeTab ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100' %>">
+      <%= tab.icon %> <%= tab.label %>
+    </a>
+  <% }) %>
+</div>
+
+<div class="max-w-4xl space-y-6">
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-4">
+      Categories <span class="text-gray-400 font-normal text-sm">(<%= categories.length %>)</span>
+    </h2>
+
+    <% if (categories.length > 0) { %>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+        <% for (const c of categories) { %>
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-indigo-200 transition-colors">
+            <span class="text-sm font-medium text-gray-700"><%= c.icon %> <%= c.name %></span>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-xs <%= c.active ? 'text-green-600' : 'text-gray-400' %> font-medium">
+                <%= c.active ? '● Active' : '○ Off' %>
+              </span>
+              <form method="POST" action="/settings/categories/<%= c.id %>/toggle">
+                <button type="submit"
+                  class="text-xs px-2 py-0.5 rounded <%= c.active ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100' %> transition-colors">
+                  <%= c.active ? 'Disable' : 'Enable' %>
+                </button>
+              </form>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="border-t border-gray-100 pt-5">
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">Add Category</h3>
+      <form method="POST" action="/settings/categories/add" class="flex gap-3 items-end">
+        <div>
+          <label class="form-label">Icon</label>
+          <input type="text" name="icon" class="form-input w-16 text-center text-lg" placeholder="🏷️" maxlength="2" />
+        </div>
+        <div class="flex-1 max-w-xs">
+          <label class="form-label">Category Name</label>
+          <input type="text" name="name" required class="form-input" placeholder="e.g., Wedding Cards" />
+        </div>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add</button>
+      </form>
+    </div>
+  </div>
+
+</div>

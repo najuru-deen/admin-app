@@ -1,37 +1,75 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-  <!-- Left: Edit Form -->
+  <!-- Left: View / Edit Form -->
   <div class="lg:col-span-2 space-y-5">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+      <!-- Header -->
       <div class="flex items-center justify-between mb-5">
-        <h2 class="text-base font-semibold text-gray-800">Edit Vendor</h2>
+        <div class="flex items-center gap-3">
+          <a href="/vendors" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back
+          </a>
+          <h2 id="formHeading" class="text-base font-semibold text-gray-800">Vendor Details</h2>
+        </div>
         <div class="flex items-center gap-2">
           <span class="tier-badge tier-<%= vendor.membership_tier %>"><%= vendor.membership_tier %></span>
           <span class="status-badge status-<%= vendor.status %>"><%= vendor.status %></span>
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg" title="Total profile views">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <%= vendor.view_count || 0 %>
+          </span>
+          <!-- Edit button (shown in view mode) -->
+          <button type="button" id="editBtn" onclick="enableEdit()"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z"/></svg>
+            Edit
+          </button>
         </div>
       </div>
 
-      <form method="POST" action="/vendors/<%= vendor.id %>/update" class="space-y-4">
+      <form id="vendorForm" method="POST" action="/vendors/<%= vendor.id %>/update" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="md:col-span-2">
             <label class="form-label">Business Name *</label>
-            <input type="text" name="name" value="<%= vendor.name %>" required class="form-input" />
+            <input type="text" name="name" value="<%= vendor.name %>" required class="form-input" disabled />
           </div>
           <div>
             <label class="form-label">Mobile</label>
-            <input type="text" name="mobile" value="<%= vendor.mobile %>" class="form-input" />
+            <input type="text" name="mobile" value="<%= vendor.mobile %>" class="form-input" disabled />
           </div>
           <div>
             <label class="form-label">WhatsApp</label>
-            <input type="text" name="whatsapp" value="<%= vendor.whatsapp || '' %>" class="form-input" />
+            <input type="text" name="whatsapp" value="<%= vendor.whatsapp || '' %>" class="form-input" disabled />
+          </div>
+          <div>
+            <label class="form-label">Email</label>
+            <input type="email" name="email" value="<%= vendor.email || '' %>" class="form-input" disabled />
+          </div>
+          <div>
+            <label class="form-label">Website</label>
+            <input type="url" name="website" value="<%= vendor.website || '' %>" class="form-input" disabled />
+          </div>
+          <div>
+            <label class="form-label">Facebook URL</label>
+            <input type="url" name="facebook_url" value="<%= vendor.facebook_url || '' %>" class="form-input" placeholder="https://facebook.com/..." disabled />
+          </div>
+          <div>
+            <label class="form-label">Instagram URL</label>
+            <input type="url" name="instagram_url" value="<%= vendor.instagram_url || '' %>" class="form-input" placeholder="https://instagram.com/..." disabled />
+          </div>
+          <div>
+            <label class="form-label">Twitter / X URL</label>
+            <input type="url" name="twitter_url" value="<%= vendor.twitter_url || '' %>" class="form-input" placeholder="https://twitter.com/..." disabled />
           </div>
           <div class="md:col-span-2">
             <label class="form-label">Full Address</label>
-            <textarea name="full_address" rows="2" class="form-input"><%= vendor.full_address || '' %></textarea>
+            <textarea name="full_address" rows="2" class="form-input" disabled><%= vendor.full_address || '' %></textarea>
           </div>
           <div>
             <label class="form-label">Category</label>
-            <select name="category_id" class="form-input">
+            <select name="category_id" class="form-input" disabled>
               <% for (const c of categories) { %>
                 <option value="<%= c.id %>" <%= vendor.category_id == c.id ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option>
               <% } %>
@@ -39,7 +77,7 @@
           </div>
           <div>
             <label class="form-label">City</label>
-            <select name="city_id" id="citySelect" class="form-input" onchange="filterRegions(this.value)">
+            <select name="city_id" id="citySelect" class="form-input" onchange="filterRegions(this.value)" disabled>
               <% for (const c of cities) { %>
                 <option value="<%= c.id %>" <%= vendor.city_id == c.id ? 'selected' : '' %>><%= c.name %></option>
               <% } %>
@@ -47,7 +85,7 @@
           </div>
           <div>
             <label class="form-label">Region</label>
-            <select name="region_id" id="regionSelect" class="form-input">
+            <select name="region_id" id="regionSelect" class="form-input" disabled>
               <option value="">All areas</option>
               <% for (const r of regions) { %>
                 <option value="<%= r.id %>" data-city="<%= r.city_id %>" <%= vendor.region_id == r.id ? 'selected' : '' %>><%= r.name %></option>
@@ -56,7 +94,7 @@
           </div>
           <div>
             <label class="form-label">Status</label>
-            <select name="status" class="form-input">
+            <select name="status" class="form-input" disabled>
               <option value="pending"  <%= vendor.status === 'pending'  ? 'selected' : '' %>>Pending</option>
               <option value="approved" <%= vendor.status === 'approved' ? 'selected' : '' %>>Approved</option>
               <option value="rejected" <%= vendor.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
@@ -64,7 +102,7 @@
           </div>
           <div>
             <label class="form-label">Membership Tier</label>
-            <select name="membership_tier" class="form-input">
+            <select name="membership_tier" class="form-input" disabled>
               <option value="basic"    <%= vendor.membership_tier === 'basic'    ? 'selected' : '' %>>Basic</option>
               <option value="silver"   <%= vendor.membership_tier === 'silver'   ? 'selected' : '' %>>Silver</option>
               <option value="gold"     <%= vendor.membership_tier === 'gold'     ? 'selected' : '' %>>Gold</option>
@@ -73,48 +111,51 @@
           </div>
           <div>
             <label class="form-label">Price Range</label>
-            <input type="text" name="amount" value="<%= vendor.amount || '' %>" class="form-input" placeholder="₹25,000 - ₹75,000" />
+            <input type="text" name="amount" value="<%= vendor.amount || '' %>" class="form-input" placeholder="₹25,000 - ₹75,000" disabled />
           </div>
           <div>
             <label class="form-label">Rating</label>
-            <input type="number" name="rating" value="<%= vendor.rating || '' %>" step="0.1" min="0" max="5" class="form-input" />
+            <input type="number" name="rating" value="<%= vendor.rating || '' %>" step="0.1" min="0" max="5" class="form-input" disabled />
           </div>
           <div class="md:col-span-2">
             <label class="form-label">Description</label>
-            <textarea name="description" rows="4" class="form-input"><%= vendor.description || '' %></textarea>
+            <textarea name="description" rows="4" class="form-input" disabled><%= vendor.description || '' %></textarea>
           </div>
           <div>
             <label class="form-label">Latitude</label>
-            <input type="number" name="latitude" value="<%= vendor.latitude || '' %>" step="any" class="form-input" />
+            <input type="number" name="latitude" value="<%= vendor.latitude || '' %>" step="any" class="form-input" disabled />
           </div>
           <div>
             <label class="form-label">Longitude</label>
-            <input type="number" name="longitude" value="<%= vendor.longitude || '' %>" step="any" class="form-input" />
+            <input type="number" name="longitude" value="<%= vendor.longitude || '' %>" step="any" class="form-input" disabled />
           </div>
         </div>
 
         <!-- Badges -->
         <div class="flex flex-wrap gap-6 py-1">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="is_verified" value="1" <%= vendor.is_verified ? 'checked' : '' %> class="w-4 h-4 text-indigo-600 rounded" />
+          <label class="flex items-center gap-2" id="lbl_verified">
+            <input type="checkbox" name="is_verified" value="1" <%= vendor.is_verified ? 'checked' : '' %> class="w-4 h-4 text-indigo-600 rounded" disabled />
             <span class="text-sm text-gray-700">✓ Verified</span>
           </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="is_trusted" value="1" <%= vendor.is_trusted ? 'checked' : '' %> class="w-4 h-4 text-indigo-600 rounded" />
+          <label class="flex items-center gap-2" id="lbl_trusted">
+            <input type="checkbox" name="is_trusted" value="1" <%= vendor.is_trusted ? 'checked' : '' %> class="w-4 h-4 text-indigo-600 rounded" disabled />
             <span class="text-sm text-gray-700">Trusted</span>
           </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="is_trending" value="1" <%= vendor.is_trending ? 'checked' : '' %> class="w-4 h-4 text-indigo-600 rounded" />
+          <label class="flex items-center gap-2" id="lbl_trending">
+            <input type="checkbox" name="is_trending" value="1" <%= vendor.is_trending ? 'checked' : '' %> class="w-4 h-4 text-indigo-600 rounded" disabled />
             <span class="text-sm text-gray-700">🔥 Trending</span>
           </label>
         </div>
 
-        <div class="flex gap-3 pt-2">
+        <!-- Action buttons (hidden in view mode, shown in edit mode) -->
+        <div id="editActions" class="hidden flex gap-3 pt-2">
           <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm">Save Changes</button>
           <% if (vendor.status === 'pending') { %>
             <button type="button" onclick="document.getElementById('approveForm').submit()"
               class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm">Approve</button>
           <% } %>
+          <button type="button" onclick="cancelEdit()"
+            class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium rounded-lg text-sm transition-colors">Cancel</button>
         </div>
       </form>
 
@@ -261,6 +302,155 @@
     </div>
   </div>
 </div>
+
+<!-- ── Reviews Section ─────────────────────────────────────────── -->
+<div id="reviews" class="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-800">Customer Reviews</h3>
+      <p class="text-xs text-gray-400 mt-0.5"><%= reviews.length %> review<%= reviews.length !== 1 ? 's' : '' %> total</p>
+    </div>
+    <% const pending = reviews.filter(r => r.status === 'pending').length; %>
+    <% if (pending > 0) { %>
+      <span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full"><%= pending %> pending</span>
+    <% } %>
+  </div>
+
+  <!-- Tab filters -->
+  <div class="flex gap-2 mb-4 border-b border-gray-100 pb-3">
+    <% ['all','pending','approved','rejected'].forEach(tab => { %>
+      <button onclick="filterReviews('<%= tab %>')"
+        id="tab-<%= tab %>"
+        class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors <%= tab === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+        <%= tab.charAt(0).toUpperCase() + tab.slice(1) %>
+        (<%= tab === 'all' ? reviews.length : reviews.filter(r => r.status === tab).length %>)
+      </button>
+    <% }) %>
+  </div>
+
+  <% if (reviews.length === 0) { %>
+    <div class="text-center py-10 text-gray-400">
+      <div class="text-4xl mb-2">⭐</div>
+      <p class="text-sm">No reviews yet for this vendor.</p>
+    </div>
+  <% } else { %>
+    <div id="reviewsList" class="space-y-3">
+      <% for (const r of reviews) { %>
+        <div class="review-item border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors" data-status="<%= r.status %>">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <!-- Header row -->
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="font-semibold text-sm text-gray-800"><%= r.reviewer_name %></span>
+                <% if (r.user_mobile) { %>
+                  <span class="text-xs text-gray-400">• <%= r.user_mobile %></span>
+                <% } %>
+                <span class="<%= r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700' %> text-xs px-2 py-0.5 rounded-full font-medium"><%= r.status %></span>
+                <span class="text-xs text-gray-400 ml-auto"><%= new Date(r.created_at * 1000).toLocaleDateString('en-IN') %></span>
+              </div>
+
+              <!-- Stars -->
+              <div class="flex items-center gap-1 mb-2">
+                <% for (let i = 1; i <= 5; i++) { %>
+                  <span class="<%= i <= r.rating ? 'text-amber-400' : 'text-gray-200' %> text-base leading-none">★</span>
+                <% } %>
+                <span class="text-xs text-gray-500 ml-1 font-medium"><%= r.rating %>/5</span>
+              </div>
+
+              <!-- Review text -->
+              <% if (r.review_text) { %>
+                <p class="text-sm text-gray-700 leading-relaxed mb-2"><%= r.review_text %></p>
+              <% } %>
+
+              <!-- Review photos -->
+              <% const photos = r.media ? r.media.map(m => m.url) : []; %>
+              <% if (photos.length > 0) { %>
+                <div class="flex gap-2 flex-wrap mt-2">
+                  <% for (const photoUrl of photos) { %>
+                    <a href="<%= photoUrl %>" target="_blank" class="block">
+                      <img src="<%= photoUrl %>" class="w-16 h-16 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition-opacity" />
+                    </a>
+                  <% } %>
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col gap-1.5 flex-shrink-0">
+              <% if (r.status !== 'approved') { %>
+                <form method="POST" action="/vendors/<%= vendor.id %>/reviews/<%= r.id %>/approve">
+                  <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors w-full">✓ Approve</button>
+                </form>
+              <% } %>
+              <% if (r.status !== 'rejected') { %>
+                <form method="POST" action="/vendors/<%= vendor.id %>/reviews/<%= r.id %>/reject">
+                  <button type="submit" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition-colors w-full">✗ Reject</button>
+                </form>
+              <% } %>
+              <form method="POST" action="/vendors/<%= vendor.id %>/reviews/<%= r.id %>/delete"
+                    onsubmit="return confirm('Delete this review permanently?')">
+                <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg border border-red-200 transition-colors w-full">🗑 Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+// ── View / Edit mode toggle ───────────────────────────────────────
+function enableEdit() {
+  // Enable all form fields
+  document.querySelectorAll('#vendorForm input, #vendorForm select, #vendorForm textarea').forEach(el => {
+    el.disabled = false;
+  });
+  // Make checkboxes clickable
+  ['lbl_verified','lbl_trusted','lbl_trending'].forEach(id => {
+    const lbl = document.getElementById(id);
+    if (lbl) lbl.style.cursor = 'pointer';
+  });
+  // Visual: highlight enabled inputs
+  document.querySelectorAll('#vendorForm .form-input').forEach(el => {
+    el.classList.remove('bg-gray-50', 'cursor-not-allowed');
+  });
+  // Swap buttons
+  document.getElementById('editBtn').classList.add('hidden');
+  document.getElementById('editActions').classList.remove('hidden');
+  document.getElementById('formHeading').textContent = 'Edit Vendor';
+}
+
+function cancelEdit() {
+  // Reload the page to discard all changes
+  window.location.reload();
+}
+// ─────────────────────────────────────────────────────────────────
+
+// Apply view-mode styling on load (disabled fields look read-only)
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#vendorForm .form-input:disabled').forEach(el => {
+    el.classList.add('bg-gray-50', 'cursor-not-allowed');
+  });
+  ['lbl_verified','lbl_trusted','lbl_trending'].forEach(id => {
+    const lbl = document.getElementById(id);
+    if (lbl) lbl.style.cursor = 'default';
+  });
+});
+</script>
+
+<script>
+function filterReviews(status) {
+  document.querySelectorAll('.review-item').forEach(el => {
+    el.style.display = (status === 'all' || el.dataset.status === status) ? '' : 'none';
+  });
+  document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+    btn.className = btn.className.replace('bg-indigo-600 text-white', 'bg-gray-100 text-gray-600 hover:bg-gray-200');
+  });
+  const active = document.getElementById('tab-' + status);
+  if (active) active.className = active.className.replace('bg-gray-100 text-gray-600 hover:bg-gray-200', 'bg-indigo-600 text-white');
+}
+</script>
 
 <script>
 function detailPreview(input) {

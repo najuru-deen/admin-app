@@ -1,56 +1,192 @@
+<%
+  const fStatus   = Array.isArray(filters.status)   ? filters.status   : (filters.status   ? [filters.status]   : []);
+  const fTier     = Array.isArray(filters.tier)     ? filters.tier     : (filters.tier     ? [filters.tier]     : []);
+  const fCity     = Array.isArray(filters.city)     ? filters.city     : (filters.city     ? [filters.city]     : []);
+  const fCategory = Array.isArray(filters.category) ? filters.category : (filters.category ? [filters.category] : []);
+  const fSearch   = filters.search || '';
+%>
 <!-- Filters -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
-  <form method="GET" action="/vendors" class="flex flex-wrap gap-3 items-end">
-    <div>
-      <label class="block text-xs text-gray-500 mb-1">Search</label>
-      <input type="text" name="search" value="<%= filters.search || '' %>" placeholder="Name or mobile..."
-        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48" />
+  <form id="filterForm" method="GET" action="/vendors">
+    <div class="flex flex-wrap gap-3 items-end">
+
+      <!-- Search -->
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Search</label>
+        <input type="text" id="searchInput" name="search" value="<%= fSearch %>" placeholder="Name or mobile..."
+          class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48" />
+      </div>
+
+      <!-- Status multi-select -->
+      <div class="relative" id="ms-status">
+        <label class="block text-xs text-gray-500 mb-1">Status</label>
+        <button type="button" onclick="toggleMs('status')"
+          class="ms-trigger flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-400 focus:outline-none min-w-[120px] justify-between">
+          <span id="ms-status-label">
+            <% if (fStatus.length === 0) { %>All Status
+            <% } else if (fStatus.length === 1) { %><%= fStatus[0] %>
+            <% } else { %><%= fStatus.length %> selected<% } %>
+          </span>
+          <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="ms-status-panel" class="ms-panel hidden absolute z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-2 min-w-[160px]">
+          <div class="flex gap-1 mb-1.5 pb-1.5 border-b border-gray-100">
+            <button type="button" onclick="selectAll('status')" class="flex-1 text-xs py-1 px-2 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium transition-colors">All</button>
+            <button type="button" onclick="unselectAll('status')" class="flex-1 text-xs py-1 px-2 rounded bg-gray-50 text-gray-500 hover:bg-gray-100 font-medium transition-colors">None</button>
+          </div>
+          <% [['pending','🕐 Pending'],['approved','✅ Approved'],['rejected','❌ Rejected']].forEach(([val,label]) => { %>
+            <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm text-gray-700">
+              <input type="checkbox" name="status" value="<%= val %>" <%= fStatus.includes(val) ? 'checked' : '' %>
+                onchange="autoSubmit()" class="w-3.5 h-3.5 text-indigo-600 rounded" />
+              <%= label %>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- Tier multi-select -->
+      <div class="relative" id="ms-tier">
+        <label class="block text-xs text-gray-500 mb-1">Tier</label>
+        <button type="button" onclick="toggleMs('tier')"
+          class="ms-trigger flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-400 focus:outline-none min-w-[120px] justify-between">
+          <span id="ms-tier-label">
+            <% if (fTier.length === 0) { %>All Tiers
+            <% } else if (fTier.length === 1) { %><%= fTier[0] %>
+            <% } else { %><%= fTier.length %> selected<% } %>
+          </span>
+          <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="ms-tier-panel" class="ms-panel hidden absolute z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-2 min-w-[150px]">
+          <div class="flex gap-1 mb-1.5 pb-1.5 border-b border-gray-100">
+            <button type="button" onclick="selectAll('tier')" class="flex-1 text-xs py-1 px-2 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium transition-colors">All</button>
+            <button type="button" onclick="unselectAll('tier')" class="flex-1 text-xs py-1 px-2 rounded bg-gray-50 text-gray-500 hover:bg-gray-100 font-medium transition-colors">None</button>
+          </div>
+          <% [['basic','Basic'],['silver','🥈 Silver'],['gold','🥇 Gold'],['platinum','💎 Platinum']].forEach(([val,label]) => { %>
+            <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm text-gray-700">
+              <input type="checkbox" name="tier" value="<%= val %>" <%= fTier.includes(val) ? 'checked' : '' %>
+                onchange="autoSubmit()" class="w-3.5 h-3.5 text-indigo-600 rounded" />
+              <%= label %>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- City multi-select -->
+      <div class="relative" id="ms-city">
+        <label class="block text-xs text-gray-500 mb-1">City</label>
+        <button type="button" onclick="toggleMs('city')"
+          class="ms-trigger flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-400 focus:outline-none min-w-[120px] justify-between">
+          <span id="ms-city-label">
+            <% if (fCity.length === 0) { %>All Cities
+            <% } else if (fCity.length === 1) { %><%= (cities.find(c => c.id == fCity[0]) || {}).name || fCity[0] %>
+            <% } else { %><%= fCity.length %> cities<% } %>
+          </span>
+          <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="ms-city-panel" class="ms-panel hidden absolute z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-2 min-w-[160px] max-h-60 overflow-y-auto">
+          <div class="flex gap-1 mb-1.5 pb-1.5 border-b border-gray-100 sticky top-0 bg-white">
+            <button type="button" onclick="selectAll('city')" class="flex-1 text-xs py-1 px-2 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium transition-colors">All</button>
+            <button type="button" onclick="unselectAll('city')" class="flex-1 text-xs py-1 px-2 rounded bg-gray-50 text-gray-500 hover:bg-gray-100 font-medium transition-colors">None</button>
+          </div>
+          <% for (const c of cities) { %>
+            <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm text-gray-700">
+              <input type="checkbox" name="city" value="<%= c.id %>" <%= fCity.map(String).includes(String(c.id)) ? 'checked' : '' %>
+                onchange="autoSubmit()" class="w-3.5 h-3.5 text-indigo-600 rounded" />
+              <%= c.name %>
+            </label>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Category multi-select -->
+      <div class="relative" id="ms-category">
+        <label class="block text-xs text-gray-500 mb-1">Category</label>
+        <button type="button" onclick="toggleMs('category')"
+          class="ms-trigger flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-400 focus:outline-none min-w-[140px] justify-between">
+          <span id="ms-category-label">
+            <% if (fCategory.length === 0) { %>All Categories
+            <% } else if (fCategory.length === 1) { %><%= (categories.find(c => c.id == fCategory[0]) || {}).name || fCategory[0] %>
+            <% } else { %><%= fCategory.length %> categories<% } %>
+          </span>
+          <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="ms-category-panel" class="ms-panel hidden absolute z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-2 min-w-[180px] max-h-60 overflow-y-auto">
+          <div class="flex gap-1 mb-1.5 pb-1.5 border-b border-gray-100 sticky top-0 bg-white">
+            <button type="button" onclick="selectAll('category')" class="flex-1 text-xs py-1 px-2 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium transition-colors">All</button>
+            <button type="button" onclick="unselectAll('category')" class="flex-1 text-xs py-1 px-2 rounded bg-gray-50 text-gray-500 hover:bg-gray-100 font-medium transition-colors">None</button>
+          </div>
+          <% for (const c of categories) { %>
+            <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm text-gray-700">
+              <input type="checkbox" name="category" value="<%= c.id %>" <%= fCategory.map(String).includes(String(c.id)) ? 'checked' : '' %>
+                onchange="autoSubmit()" class="w-3.5 h-3.5 text-indigo-600 rounded" />
+              <%= c.icon %> <%= c.name %>
+            </label>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Clear + Add -->
+      <div class="flex gap-2 ml-auto items-end flex-wrap">
+        <a href="/vendors" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          Clear
+        </a>
+
+        <!-- Export dropdown -->
+        <div class="relative" id="exportDropdown">
+          <button type="button" onclick="toggleExport()"
+            class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm rounded-lg transition-colors flex items-center gap-1 border border-emerald-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="exportPanel" class="hidden absolute right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 w-44">
+            <a href="#" onclick="doExport('xlsx')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+              <span class="text-green-600">📊</span> Export as XLSX
+            </a>
+            <a href="#" onclick="doExport('csv')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+              <span class="text-blue-600">📄</span> Export as CSV
+            </a>
+            <div class="border-t border-gray-100 my-1"></div>
+            <p class="px-4 py-1.5 text-xs text-gray-400">Exports current filters</p>
+          </div>
+        </div>
+
+        <!-- Import button -->
+        <button type="button" onclick="document.getElementById('importModal').classList.remove('hidden')"
+          class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm rounded-lg transition-colors flex items-center gap-1 border border-blue-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+          Import
+        </button>
+
+        <a href="/vendors/add" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Vendor
+        </a>
+      </div>
     </div>
-    <div>
-      <label class="block text-xs text-gray-500 mb-1">Status</label>
-      <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <option value="">All Status</option>
-        <option value="pending"  <%= filters.status === 'pending'  ? 'selected' : '' %>>Pending</option>
-        <option value="approved" <%= filters.status === 'approved' ? 'selected' : '' %>>Approved</option>
-        <option value="rejected" <%= filters.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
-      </select>
-    </div>
-    <div>
-      <label class="block text-xs text-gray-500 mb-1">Tier</label>
-      <select name="tier" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <option value="">All Tiers</option>
-        <option value="basic"    <%= filters.tier === 'basic'    ? 'selected' : '' %>>Basic</option>
-        <option value="silver"   <%= filters.tier === 'silver'   ? 'selected' : '' %>>Silver</option>
-        <option value="gold"     <%= filters.tier === 'gold'     ? 'selected' : '' %>>Gold</option>
-        <option value="platinum" <%= filters.tier === 'platinum' ? 'selected' : '' %>>Platinum</option>
-      </select>
-    </div>
-    <div>
-      <label class="block text-xs text-gray-500 mb-1">City</label>
-      <select name="city" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <option value="">All Cities</option>
-        <% for (const c of cities) { %>
-          <option value="<%= c.id %>" <%= filters.city == c.id ? 'selected' : '' %>><%= c.name %></option>
+
+    <!-- Active filter chips -->
+    <% if (fStatus.length || fTier.length || fCity.length || fCategory.length || fSearch) { %>
+      <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+        <span class="text-xs text-gray-400 self-center">Active:</span>
+        <% fStatus.forEach(v => { %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full">Status: <%= v %></span>
+        <% }) %>
+        <% fTier.forEach(v => { %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded-full">Tier: <%= v %></span>
+        <% }) %>
+        <% fCity.forEach(v => { const c = cities.find(x => x.id == v); %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full">City: <%= c ? c.name : v %></span>
+        <% }) %>
+        <% fCategory.forEach(v => { const c = categories.find(x => x.id == v); %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 text-xs rounded-full">Category: <%= c ? c.name : v %></span>
+        <% }) %>
+        <% if (fSearch) { %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs rounded-full">Search: "<%= fSearch %>"</span>
         <% } %>
-      </select>
-    </div>
-    <div>
-      <label class="block text-xs text-gray-500 mb-1">Category</label>
-      <select name="category" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <option value="">All Categories</option>
-        <% for (const c of categories) { %>
-          <option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>><%= c.name %></option>
-        <% } %>
-      </select>
-    </div>
-    <div class="flex gap-2">
-      <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors">Filter</button>
-      <a href="/vendors" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors">Clear</a>
-    </div>
-    <a href="/vendors/add" class="ml-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors flex items-center gap-1">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Add Vendor
-    </a>
+      </div>
+    <% } %>
   </form>
 </div>
 
@@ -109,10 +245,18 @@
                   <% if (v.is_trending)  { %><span title="Trending"  class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">🔥</span><% } %>
                 </div>
               </td>
-              <td class="px-5 py-3 text-gray-400 text-xs"><%= new Date(v.created_at * 1000).toLocaleDateString('en-IN') %></td>
+              <td class="px-5 py-3 text-gray-400 text-xs">
+                <div><%= new Date(v.created_at * 1000).toLocaleDateString('en-IN') %></div>
+                <% if (v.view_count) { %>
+                  <div class="text-gray-400 mt-0.5">👁 <%= v.view_count %> views</div>
+                <% } %>
+              </td>
               <td class="px-5 py-3">
                 <div class="flex items-center gap-2">
-                  <a href="/vendors/<%= v.id %>" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</a>
+                  <a href="/vendors/<%= v.id %>" class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded-md transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    View
+                  </a>
                   <% if (v.status === 'pending') { %>
                     <form method="POST" action="/vendors/<%= v.id %>/approve" class="inline">
                       <button type="submit" class="text-green-600 hover:text-green-800 text-xs font-medium">Approve</button>
@@ -132,19 +276,194 @@
 
     <!-- Pagination -->
     <% if (pagination.pages > 1) { %>
+      <%
+        function pageUrl(p) {
+          const parts = [];
+          fStatus.forEach(v => parts.push('status=' + encodeURIComponent(v)));
+          fTier.forEach(v => parts.push('tier=' + encodeURIComponent(v)));
+          fCity.forEach(v => parts.push('city=' + encodeURIComponent(v)));
+          fCategory.forEach(v => parts.push('category=' + encodeURIComponent(v)));
+          if (fSearch) parts.push('search=' + encodeURIComponent(fSearch));
+          parts.push('page=' + p);
+          return '?' + parts.join('&');
+        }
+      %>
       <div class="px-5 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
         <span class="text-gray-500">Page <%= pagination.page %> of <%= pagination.pages %></span>
         <div class="flex gap-2">
           <% if (pagination.page > 1) { %>
-            <a href="?page=<%= pagination.page - 1 %>&status=<%= filters.status||'' %>&tier=<%= filters.tier||'' %>&city=<%= filters.city||'' %>&category=<%= filters.category||'' %>&search=<%= filters.search||'' %>"
-               class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">← Prev</a>
+            <a href="<%= pageUrl(pagination.page - 1) %>" class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">← Prev</a>
           <% } %>
           <% if (pagination.page < pagination.pages) { %>
-            <a href="?page=<%= pagination.page + 1 %>&status=<%= filters.status||'' %>&tier=<%= filters.tier||'' %>&city=<%= filters.city||'' %>&category=<%= filters.category||'' %>&search=<%= filters.search||'' %>"
-               class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">Next →</a>
+            <a href="<%= pageUrl(pagination.page + 1) %>" class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">Next →</a>
           <% } %>
         </div>
       </div>
     <% } %>
   <% } %>
 </div>
+
+<!-- SheetJS for client-side template generation -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<!-- Import Modal -->
+<div id="importModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="text-base font-semibold text-gray-800">Import Vendors</h3>
+      <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-6">
+      <!-- Info box -->
+      <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 space-y-1">
+        <p class="font-semibold">Required columns:</p>
+        <p><code class="bg-blue-100 px-1 rounded">Name</code>, <code class="bg-blue-100 px-1 rounded">Mobile</code>, <code class="bg-blue-100 px-1 rounded">Category</code>, <code class="bg-blue-100 px-1 rounded">City</code></p>
+        <p class="font-semibold mt-1">Optional columns:</p>
+        <p><code class="bg-blue-100 px-1 rounded">WhatsApp</code> <code class="bg-blue-100 px-1 rounded">Email</code> <code class="bg-blue-100 px-1 rounded">Website</code> <code class="bg-blue-100 px-1 rounded">Address</code> <code class="bg-blue-100 px-1 rounded">Tier</code> <code class="bg-blue-100 px-1 rounded">Status</code> <code class="bg-blue-100 px-1 rounded">Description</code> <code class="bg-blue-100 px-1 rounded">Verified</code> <code class="bg-blue-100 px-1 rounded">Trusted</code> <code class="bg-blue-100 px-1 rounded">Trending</code></p>
+        <p class="mt-1">Tier: basic / silver / gold / platinum &nbsp;|&nbsp; Status: pending / approved / rejected</p>
+        <p>Verified / Trusted / Trending: Yes or No</p>
+      </div>
+
+      <form method="POST" action="/vendors/import" enctype="multipart/form-data" id="importForm">
+        <!-- Drop zone -->
+        <div id="dropZone"
+          class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors mb-4"
+          onclick="document.getElementById('importFile').click()"
+          ondragover="event.preventDefault();this.classList.add('border-indigo-400','bg-indigo-50')"
+          ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
+          ondrop="handleDrop(event)">
+          <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <p class="text-sm text-gray-500" id="dropLabel">Click to browse or drag & drop</p>
+          <p class="text-xs text-gray-400 mt-1">Supports .xlsx, .xls, .csv — max 5 MB</p>
+          <input type="file" id="importFile" name="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="fileSelected(this)" />
+        </div>
+
+        <div class="flex gap-3">
+          <button type="submit" id="importBtn" disabled
+            class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg text-sm transition-colors">
+            Upload & Import
+          </button>
+          <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')"
+            class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg text-sm">
+            Cancel
+          </button>
+        </div>
+
+        <!-- Template download link -->
+        <p class="text-center text-xs text-gray-400 mt-3">
+          <a href="#" onclick="downloadTemplate(event)" class="text-indigo-600 hover:underline">Download template (.xlsx)</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Multi-select dropdown toggle ──────────────────────────────
+function toggleMs(name) {
+  const panel = document.getElementById('ms-' + name + '-panel');
+  const isOpen = !panel.classList.contains('hidden');
+  document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
+  if (!isOpen) panel.classList.remove('hidden');
+}
+
+// Close panels when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[id^="ms-"]')) {
+    document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
+  }
+});
+
+// ── Select All / Unselect All ────────────────────────────────
+function selectAll(name) {
+  document.querySelectorAll(`#ms-${name}-panel input[type="checkbox"]`).forEach(cb => cb.checked = true);
+  autoSubmit();
+}
+function unselectAll(name) {
+  document.querySelectorAll(`#ms-${name}-panel input[type="checkbox"]`).forEach(cb => cb.checked = false);
+  autoSubmit();
+}
+
+// ── Auto-submit on checkbox change ───────────────────────────
+function autoSubmit() {
+  document.getElementById('filterForm').submit();
+}
+
+// ── Debounced search ─────────────────────────────────────────
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => document.getElementById('filterForm').submit(), 400);
+});
+
+// ── Export ────────────────────────────────────────────────────
+function toggleExport() {
+  const p = document.getElementById('exportPanel');
+  p.classList.toggle('hidden');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#exportDropdown')) {
+    document.getElementById('exportPanel').classList.add('hidden');
+  }
+});
+function doExport(format) {
+  // Build URL preserving current filters
+  const form = document.getElementById('filterForm');
+  const fd = new FormData(form);
+  const params = new URLSearchParams();
+  for (const [k, v] of fd.entries()) if (v) params.append(k, v);
+  // Also pick up all checked checkboxes (FormData only gets checked ones, but let's be safe)
+  document.querySelectorAll('#filterForm input[type="checkbox"]:checked').forEach(cb => {
+    if (!params.getAll(cb.name).includes(cb.value)) params.append(cb.name, cb.value);
+  });
+  params.set('format', format);
+  window.location.href = '/vendors/export?' + params.toString();
+  document.getElementById('exportPanel').classList.add('hidden');
+}
+
+// ── Import file picker ────────────────────────────────────────
+function fileSelected(input) {
+  const label = document.getElementById('dropLabel');
+  const btn   = document.getElementById('importBtn');
+  if (input.files && input.files[0]) {
+    label.textContent = '📎 ' + input.files[0].name;
+    btn.disabled = false;
+  }
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('border-indigo-400', 'bg-indigo-50');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+    alert('Only .xlsx, .xls, or .csv files are supported.');
+    return;
+  }
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('importFile').files = dt.files;
+  fileSelected(document.getElementById('importFile'));
+}
+
+// ── Template download (client-side) ──────────────────────────
+function downloadTemplate(e) {
+  e.preventDefault();
+  const headers = ['Name','Mobile','WhatsApp','Email','Website','Category','City','Address','Tier','Status','Description','Verified','Trusted','Trending'];
+  const sample  = ['Sample Vendor','9876543210','9876543210','vendor@example.com','https://example.com','Photography','Chennai','123 Main St','gold','pending','Sample description','No','No','No'];
+  const rows = [headers, sample];
+  const ws = {};
+  rows.forEach((row, r) => {
+    row.forEach((val, c) => {
+      const cell = XLSX.utils.encode_cell({ r, c });
+      ws[cell] = { v: val, t: 's' };
+    });
+  });
+  ws['!ref'] = XLSX.utils.encode_range({ s: { r:0,c:0 }, e: { r: rows.length-1, c: headers.length-1 } });
+  ws['!cols'] = headers.map(() => ({ wch: 18 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vendors');
+  XLSX.writeFile(wb, 'vendors_template.xlsx');
+}
+</script>

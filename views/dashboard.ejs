@@ -1,89 +1,249 @@
+<%
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+%>
+
 <% if (locals.dbError) { %>
-  <div class="mb-4 p-4 bg-amber-50 border border-amber-300 text-amber-800 rounded-lg text-sm">
+  <div class="mb-4 p-4 bg-amber-50 border border-amber-300 text-amber-800 rounded-xl text-sm flex items-center gap-2">
+    <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
     <strong>Database warning:</strong> <%= dbError %>. Please configure the DB URL in <a href="/settings" class="underline font-medium">Settings</a>.
   </div>
 <% } %>
 
-<!-- Stats Grid -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <%
-    const cards = [
-      { label: 'Total Vendors',    value: stats.totalVendors,    color: 'indigo',  icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16' },
-      { label: 'Pending Approval', value: stats.pendingVendors,  color: 'amber',   icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', link: '/vendors/pending' },
-      { label: 'Active Subscribers', value: stats.activeSubscribers, color: 'green', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-      { label: 'Total Revenue',    value: '₹' + stats.revenue,  color: 'purple',  icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    ];
-    const colorMap = { indigo: 'bg-indigo-50 text-indigo-700', amber: 'bg-amber-50 text-amber-700', green: 'bg-green-50 text-green-700', purple: 'bg-purple-50 text-purple-700' };
-  %>
-  <% for (const card of cards) { %>
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 <%= card.link ? 'cursor-pointer hover:shadow-md transition-shadow' : '' %>" <%= card.link ? `onclick="location.href='${card.link}'"` : '' %>>
-      <div class="flex items-start justify-between">
-        <div>
-          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"><%= card.label %></p>
-          <p class="text-2xl font-bold text-gray-800"><%= card.value %></p>
-        </div>
-        <div class="p-2 rounded-lg <%= colorMap[card.color] %>">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= card.icon %>"/>
+<!-- Welcome Banner -->
+<div class="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 rounded-2xl p-6 mb-6 overflow-hidden">
+  <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 80% 20%, white 1px, transparent 1px); background-size: 32px 32px;"></div>
+  <div class="relative flex items-center justify-between">
+    <div>
+      <p class="text-indigo-200 text-sm font-medium mb-0.5"><%= greeting %>, <span class="text-white font-semibold"><%= user?.username %></span> 👋</p>
+      <h2 class="text-white text-2xl font-bold mb-1">Veetla Visesanga Admin</h2>
+      <p class="text-indigo-300 text-sm"><%= dateStr %></p>
+    </div>
+    <div class="hidden md:flex items-center gap-4">
+      <a href="/vendors/pending" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors backdrop-blur-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Pending (<%= stats.pendingVendors || 0 %>)
+      </a>
+      <a href="/vendors/add" class="flex items-center gap-2 bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Vendor
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Primary Stats Row -->
+<%
+  const primaryCards = [
+    {
+      label: 'Total Vendors',
+      value: stats.totalVendors || 0,
+      sub: `${stats.approvedVendors || 0} approved`,
+      color: 'indigo',
+      link: '/vendors',
+      iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+    },
+    {
+      label: 'Active Subscribers',
+      value: stats.activeSubscribers || 0,
+      sub: 'active memberships',
+      color: 'green',
+      link: '/subscribers',
+      iconPath: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+    },
+    {
+      label: 'Total Revenue',
+      value: '₹' + (stats.revenue || '0'),
+      sub: 'from paid memberships',
+      color: 'purple',
+      iconPath: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+      label: 'Profile Views',
+      value: (stats.totalViews || 0).toLocaleString('en-IN'),
+      sub: 'across all vendors',
+      color: 'blue',
+      iconPath: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
+    },
+  ];
+  const colorBg  = { indigo:'bg-indigo-50', green:'bg-green-50', purple:'bg-purple-50', blue:'bg-blue-50', amber:'bg-amber-50' };
+  const colorText= { indigo:'text-indigo-600', green:'text-green-600', purple:'text-purple-600', blue:'text-blue-600', amber:'text-amber-600' };
+  const colorBorder = { indigo:'border-l-indigo-500', green:'border-l-green-500', purple:'border-l-purple-500', blue:'border-l-blue-500', amber:'border-l-amber-500' };
+%>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+  <% for (const card of primaryCards) { %>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 <%= colorBorder[card.color] %> <%= card.link ? 'cursor-pointer hover:shadow-md transition-shadow' : '' %>" <%= card.link ? `onclick="location.href='${card.link}'"` : '' %>>
+      <div class="flex items-start justify-between mb-3">
+        <div class="p-2 rounded-lg <%= colorBg[card.color] %>">
+          <svg class="w-5 h-5 <%= colorText[card.color] %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= card.iconPath %>"/>
           </svg>
         </div>
       </div>
+      <p class="text-2xl font-bold text-gray-800 mb-0.5"><%= card.value %></p>
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide"><%= card.label %></p>
+      <p class="text-xs text-gray-400 mt-0.5"><%= card.sub %></p>
     </div>
   <% } %>
 </div>
 
-<!-- Second row stats -->
+<!-- Secondary Stats Row -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Approved</p>
-    <p class="text-xl font-bold text-green-600"><%= stats.approvedVendors %></p>
+  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 border-l-4 border-l-amber-400 cursor-pointer hover:shadow-md transition-shadow" onclick="location.href='/vendors/pending'">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xl font-bold text-amber-600"><%= stats.pendingVendors || 0 %></p>
+        <p class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Pending Approval</p>
+      </div>
+      <% if ((stats.pendingVendors || 0) > 0) { %>
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+      <% } %>
+    </div>
   </div>
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Rejected</p>
-    <p class="text-xl font-bold text-red-500"><%= stats.rejectedVendors %></p>
+  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 border-l-4 border-l-red-400">
+    <p class="text-xl font-bold text-red-500"><%= stats.rejectedVendors || 0 %></p>
+    <p class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Rejected</p>
   </div>
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Leads Today</p>
-    <p class="text-xl font-bold text-blue-600"><%= stats.leadsToday %></p>
+  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 border-l-4 border-l-sky-400">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xl font-bold text-sky-600"><%= stats.leadsToday || 0 %></p>
+        <p class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Leads Today</p>
+      </div>
+      <p class="text-xs text-gray-400"><%= stats.totalLeads || 0 %> total</p>
+    </div>
   </div>
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Leads</p>
-    <p class="text-xl font-bold text-gray-700"><%= stats.totalLeads %></p>
+  <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 border-l-4 border-l-rose-400">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xl font-bold text-rose-600"><%= stats.pendingReviews || 0 %></p>
+        <p class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Pending Reviews</p>
+      </div>
+      <% if ((stats.pendingReviews || 0) > 0) { %>
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></span>
+      <% } %>
+    </div>
   </div>
 </div>
 
-<!-- Tier Breakdown + Recent Vendors -->
+<!-- Middle Row: Tier Breakdown | Lead Type | Top Vendors -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
   <!-- Tier Breakdown -->
   <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-    <h2 class="text-sm font-semibold text-gray-700 mb-4">Vendor Tiers (Approved)</h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold text-gray-700">Vendor Tiers</h2>
+      <span class="text-xs text-gray-400"><%= stats.approvedVendors || 0 %> approved</span>
+    </div>
+    <%
+      const tiers = [
+        { key: 'platinum', label: 'Platinum', bar: 'bg-purple-500', badge: 'bg-purple-100 text-purple-700' },
+        { key: 'gold',     label: 'Gold',     bar: 'bg-yellow-400', badge: 'bg-yellow-100 text-yellow-700' },
+        { key: 'silver',   label: 'Silver',   bar: 'bg-slate-400',  badge: 'bg-slate-100 text-slate-600' },
+        { key: 'basic',    label: 'Basic',    bar: 'bg-blue-400',   badge: 'bg-blue-100 text-blue-700' },
+      ];
+      const totalApproved = (tierBreakdown.platinum||0) + (tierBreakdown.gold||0) + (tierBreakdown.silver||0) + (tierBreakdown.basic||0) || 1;
+    %>
     <div class="space-y-3">
-      <%
-        const tiers = [
-          { key: 'platinum', label: 'Platinum', color: 'bg-purple-500' },
-          { key: 'gold',     label: 'Gold',     color: 'bg-yellow-500' },
-          { key: 'silver',   label: 'Silver',   color: 'bg-gray-400' },
-          { key: 'basic',    label: 'Basic',    color: 'bg-blue-400' },
-        ];
-        const totalApproved = (tierBreakdown.platinum||0) + (tierBreakdown.gold||0) + (tierBreakdown.silver||0) + (tierBreakdown.basic||0) || 1;
-      %>
       <% for (const t of tiers) { %>
+        <%
+          const count = tierBreakdown[t.key] || 0;
+          const pct = Math.round((count / totalApproved) * 100);
+        %>
         <div>
-          <div class="flex justify-between text-xs text-gray-600 mb-1">
-            <span><%= t.label %></span>
-            <span class="font-medium"><%= tierBreakdown[t.key] || 0 %></span>
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full <%= t.badge %>"><%= t.label %></span>
+            <span class="text-xs text-gray-500"><%= count %> <span class="text-gray-300">•</span> <%= pct %>%</span>
           </div>
-          <div class="w-full bg-gray-100 rounded-full h-2">
-            <div class="<%= t.color %> h-2 rounded-full" style="width: <%= Math.round(((tierBreakdown[t.key]||0)/totalApproved)*100) %>%"></div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5">
+            <div class="<%= t.bar %> h-1.5 rounded-full transition-all" style="width: <%= pct %>%"></div>
           </div>
         </div>
       <% } %>
     </div>
   </div>
 
-  <!-- Recent Vendors -->
-  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
+  <!-- Lead Type Breakdown -->
+  <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold text-gray-700">Lead Channels</h2>
+      <span class="text-xs text-gray-400"><%= stats.totalLeads || 0 %> total</span>
+    </div>
+    <%
+      const totalLeadsNum = (leadTypeBreakdown.call||0) + (leadTypeBreakdown.whatsapp||0) + (leadTypeBreakdown.enquiry||0) || 1;
+      const leadTypes = [
+        { key: 'call',     label: 'Phone Call', emoji: '📞', bar: 'bg-blue-500',  pill: 'bg-blue-100 text-blue-700' },
+        { key: 'whatsapp', label: 'WhatsApp',   emoji: '💬', bar: 'bg-green-500', pill: 'bg-green-100 text-green-700' },
+        { key: 'enquiry',  label: 'Enquiry',    emoji: '📋', bar: 'bg-orange-400',pill: 'bg-orange-100 text-orange-700' },
+      ];
+    %>
+    <div class="space-y-3">
+      <% for (const lt of leadTypes) { %>
+        <%
+          const count = leadTypeBreakdown[lt.key] || 0;
+          const pct = Math.round((count / totalLeadsNum) * 100);
+        %>
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-xs"><%= lt.emoji %> <span class="font-medium text-gray-600"><%= lt.label %></span></span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full <%= lt.pill %>"><%= count %></span>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5">
+            <div class="<%= lt.bar %> h-1.5 rounded-full" style="width: <%= pct %>%"></div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-5 pt-4 border-t border-gray-100">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Quick Actions</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/vendors/add" class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">+ Add Vendor</a>
+        <a href="/vendors/pending" class="text-xs px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg font-medium transition-colors">Review Pending</a>
+        <a href="/history" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-medium transition-colors">Activity Log</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Vendors by Views -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-gray-700">Top Vendors by Views</h2>
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+    </div>
+    <% if (!topVendors || topVendors.length === 0) { %>
+      <p class="p-5 text-sm text-gray-400 text-center">No view data yet.</p>
+    <% } else { %>
+      <div class="divide-y divide-gray-50">
+        <% topVendors.forEach((v, i) => { %>
+          <a href="/vendors/<%= v.id %>" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+            <span class="w-5 text-xs font-bold text-gray-300 text-right shrink-0"><%= i + 1 %></span>
+            <div class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold shrink-0">
+              <%= v.name.charAt(0) %>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-800 truncate"><%= v.name %></p>
+              <p class="text-xs text-gray-400 truncate"><%= v.category_name || '—' %></p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="text-sm font-semibold text-gray-700"><%= (v.view_count || 0).toLocaleString('en-IN') %></span>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Bottom Row: Recent Vendors | Recent Leads -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+  <!-- Recent Registrations (3/5) -->
+  <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
       <h2 class="text-sm font-semibold text-gray-700">Recent Registrations</h2>
       <a href="/vendors" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View all →</a>
@@ -93,17 +253,17 @@
         <p class="p-5 text-sm text-gray-400 text-center">No vendors yet.</p>
       <% } else { %>
         <% for (const v of recentVendors) { %>
-          <a href="/vendors/<%= v.id %>" class="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+          <a href="/vendors/<%= v.id %>" class="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors group">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold">
+              <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-bold shrink-0">
                 <%= v.name.charAt(0) %>
               </div>
               <div>
-                <p class="text-sm font-medium text-gray-800"><%= v.name %></p>
-                <p class="text-xs text-gray-400"><%= v.category_name %> • <%= v.city_name %></p>
+                <p class="text-sm font-medium text-gray-800 group-hover:text-indigo-600 transition-colors"><%= v.name %></p>
+                <p class="text-xs text-gray-400"><%= v.category_name || '—' %> · <%= v.city_name || '—' %></p>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               <span class="tier-badge tier-<%= v.membership_tier %>"><%= v.membership_tier %></span>
               <span class="status-badge status-<%= v.status %>"><%= v.status %></span>
             </div>
@@ -112,39 +272,41 @@
       <% } %>
     </div>
   </div>
-</div>
 
-<!-- Recent Leads -->
-<% if (recentLeads && recentLeads.length > 0) { %>
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-  <div class="px-5 py-4 border-b border-gray-100">
-    <h2 class="text-sm font-semibold text-gray-700">Recent Leads</h2>
+  <!-- Recent Leads (2/5) -->
+  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-gray-700">Recent Leads</h2>
+      <a href="/history" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View all →</a>
+    </div>
+    <% if (!recentLeads || recentLeads.length === 0) { %>
+      <p class="p-5 text-sm text-gray-400 text-center">No leads yet.</p>
+    <% } else { %>
+      <div class="divide-y divide-gray-50">
+        <% for (const lead of recentLeads) { %>
+          <div class="px-5 py-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate"><%= lead.vendor_name || '—' %></p>
+                <p class="text-xs text-gray-400 truncate"><%= lead.category_name || '—' %></p>
+              </div>
+              <%
+                const typeCfg = {
+                  call:     { cls: 'bg-blue-100 text-blue-700',   label: '📞 Call' },
+                  whatsapp: { cls: 'bg-green-100 text-green-700', label: '💬 WA' },
+                  enquiry:  { cls: 'bg-orange-100 text-orange-700', label: '📋 Enquiry' },
+                };
+                const tc = typeCfg[lead.type] || { cls: 'bg-gray-100 text-gray-600', label: lead.type || '—' };
+              %>
+              <span class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 <%= tc.cls %>"><%= tc.label %></span>
+            </div>
+            <div class="flex items-center justify-between mt-1">
+              <span class="text-xs text-gray-400"><%= lead.user_mobile || '—' %></span>
+              <span class="text-xs text-gray-300"><%= new Date(lead.created_at * 1000).toLocaleDateString('en-IN') %></span>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
   </div>
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
-      <tr>
-        <th class="px-5 py-3 text-left">Vendor</th>
-        <th class="px-5 py-3 text-left">Category</th>
-        <th class="px-5 py-3 text-left">Type</th>
-        <th class="px-5 py-3 text-left">Mobile</th>
-        <th class="px-5 py-3 text-left">Date</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-50">
-      <% for (const lead of recentLeads) { %>
-        <tr class="hover:bg-gray-50">
-          <td class="px-5 py-3 font-medium text-gray-800"><%= lead.vendor_name || '—' %></td>
-          <td class="px-5 py-3 text-gray-500"><%= lead.category_name || '—' %></td>
-          <td class="px-5 py-3">
-            <span class="px-2 py-0.5 rounded text-xs font-medium <%= lead.type === 'call' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' %>">
-              <%= lead.type %>
-            </span>
-          </td>
-          <td class="px-5 py-3 text-gray-500"><%= lead.user_mobile || '—' %></td>
-          <td class="px-5 py-3 text-gray-400"><%= new Date(lead.created_at * 1000).toLocaleString('en-IN') %></td>
-        </tr>
-      <% } %>
-    </tbody>
-  </table>
 </div>
-<% } %>

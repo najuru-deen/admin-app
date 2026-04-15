@@ -1,0 +1,96 @@
+<%
+  const settingsTabs = [
+    { href: '/settings/cities',     label: 'Cities & Regions', icon: '🗺️' },
+    { href: '/settings/categories', label: 'Categories',        icon: '🏷️' },
+    { href: '/settings/system',     label: 'System',            icon: '⚙️' },
+  ];
+  const activeTab = '/settings/cities';
+%>
+
+<!-- Sub-tabs -->
+<div class="flex gap-1 bg-white rounded-xl border border-gray-100 shadow-sm p-1 mb-6 w-fit">
+  <% settingsTabs.forEach(tab => { %>
+    <a href="<%= tab.href %>"
+      class="px-4 py-2 rounded-lg text-sm font-medium transition-colors <%= tab.href === activeTab ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100' %>">
+      <%= tab.icon %> <%= tab.label %>
+    </a>
+  <% }) %>
+</div>
+
+<div class="max-w-4xl space-y-6">
+
+  <!-- Cities -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-4">Cities</h2>
+    <div class="flex flex-wrap gap-2 mb-5">
+      <% for (const c of cities) { %>
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+          <span class="text-sm font-medium"><%= c.name %></span>
+          <span class="text-xs <%= c.active ? 'text-green-600' : 'text-gray-400' %>"><%= c.active ? 'Active' : 'Off' %></span>
+          <form method="POST" action="/settings/cities/<%= c.id %>/toggle" class="inline">
+            <button type="submit" class="text-xs text-gray-400 hover:text-indigo-600" title="Toggle">⟳</button>
+          </form>
+        </div>
+      <% } %>
+      <% if (cities.length === 0) { %>
+        <p class="text-sm text-gray-400">No cities added yet.</p>
+      <% } %>
+    </div>
+    <form method="POST" action="/settings/cities/add" class="flex gap-3 items-end">
+      <div class="flex-1 max-w-xs">
+        <label class="form-label">New City Name</label>
+        <input type="text" name="name" required class="form-input" placeholder="e.g., Salem" />
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add City</button>
+    </form>
+  </div>
+
+  <!-- Regions -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-base font-semibold text-gray-800 mb-4">Regions <span class="text-gray-400 font-normal text-sm">(<%= regions.length %>)</span></h2>
+
+    <% if (regions.length > 0) { %>
+      <div class="rounded-lg border border-gray-100 overflow-hidden mb-5">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="px-4 py-2 text-left">Region</th>
+              <th class="px-4 py-2 text-left">City</th>
+              <th class="px-4 py-2 text-left">Areas</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <% for (const r of regions) { %>
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2 font-medium text-gray-700"><%= r.name %></td>
+                <td class="px-4 py-2 text-gray-500"><%= cities.find(c => c.id == r.city_id)?.name || '—' %></td>
+                <td class="px-4 py-2 text-gray-400 text-xs truncate max-w-[220px]"><%= r.areas || '—' %></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/settings/regions/add" class="flex flex-wrap gap-3 items-end">
+      <div>
+        <label class="form-label">City</label>
+        <select name="city_id" required class="form-input">
+          <% for (const c of cities) { %>
+            <option value="<%= c.id %>"><%= c.name %></option>
+          <% } %>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Region Name</label>
+        <input type="text" name="name" required class="form-input w-40" placeholder="e.g., North Zone" />
+      </div>
+      <div>
+        <label class="form-label">Areas <span class="text-gray-400 font-normal">(comma-separated)</span></label>
+        <input type="text" name="areas" class="form-input w-56" placeholder="Area 1, Area 2" />
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Add Region</button>
+    </form>
+  </div>
+
+</div>

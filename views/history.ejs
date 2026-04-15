@@ -1,3 +1,26 @@
+<%
+function actionColor(action) {
+  const map = {
+    LOGIN: 'bg-blue-100 text-blue-700',
+    LOGOUT: 'bg-gray-100 text-gray-600',
+    LOGIN_FAILED: 'bg-red-100 text-red-700',
+    APPROVE_VENDOR: 'bg-green-100 text-green-700',
+    REJECT_VENDOR: 'bg-red-100 text-red-700',
+    ADD_VENDOR: 'bg-indigo-100 text-indigo-700',
+    UPDATE_VENDOR: 'bg-yellow-100 text-yellow-700',
+    DELETE_VENDOR: 'bg-red-100 text-red-700',
+    ADD_MEMBERSHIP: 'bg-purple-100 text-purple-700',
+    MARK_PAID: 'bg-green-100 text-green-700',
+    EXTEND_MEMBERSHIP: 'bg-indigo-100 text-indigo-700',
+    DELETE_MEMBERSHIP: 'bg-red-100 text-red-700',
+    UPDATE_DB_URL: 'bg-orange-100 text-orange-700',
+    ADD_ADMIN_USER: 'bg-blue-100 text-blue-700',
+    CHANGE_PASSWORD: 'bg-yellow-100 text-yellow-700',
+    DELETE_ADMIN_USER: 'bg-red-100 text-red-700',
+  };
+  return map[action] || 'bg-gray-100 text-gray-600';
+}
+%>
 <!-- Filters -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
   <form method="GET" action="/history" class="flex flex-wrap gap-3 items-end">
@@ -122,26 +145,3 @@
   <% } %>
 </div>
 
-<script>
-function actionColor(action) {
-  const map = {
-    LOGIN: 'bg-blue-100 text-blue-700',
-    LOGOUT: 'bg-gray-100 text-gray-600',
-    LOGIN_FAILED: 'bg-red-100 text-red-700',
-    APPROVE_VENDOR: 'bg-green-100 text-green-700',
-    REJECT_VENDOR: 'bg-red-100 text-red-700',
-    ADD_VENDOR: 'bg-indigo-100 text-indigo-700',
-    UPDATE_VENDOR: 'bg-yellow-100 text-yellow-700',
-    DELETE_VENDOR: 'bg-red-100 text-red-700',
-    ADD_MEMBERSHIP: 'bg-purple-100 text-purple-700',
-    MARK_PAID: 'bg-green-100 text-green-700',
-    EXTEND_MEMBERSHIP: 'bg-indigo-100 text-indigo-700',
-    DELETE_MEMBERSHIP: 'bg-red-100 text-red-700',
-    UPDATE_DB_URL: 'bg-orange-100 text-orange-700',
-    ADD_ADMIN_USER: 'bg-blue-100 text-blue-700',
-    CHANGE_PASSWORD: 'bg-yellow-100 text-yellow-700',
-    DELETE_ADMIN_USER: 'bg-red-100 text-red-700',
-  };
-  return map[action] || 'bg-gray-100 text-gray-600';
-}
-</script>

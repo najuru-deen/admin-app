@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 const multer = require('multer');
 const path   = require('path');
 const fs     = require('fs');
+const XLSX   = require('xlsx');
 
 const uploadDir = path.join(__dirname, '../../server/uploads/vendors');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -37,17 +38,22 @@ function flatVendor(v) {
 }
 
 router.get('/', requireAuth, async (req, res) => {
-  const { status, tier, city, category, search, page = 1 } = req.query;
-  const limit = 20, offset = (page - 1) * limit;
+  const { search, page = 1 } = req.query;
+  const toArr = (v) => !v ? [] : Array.isArray(v) ? v : [v];
+  const statusArr   = toArr(req.query.status);
+  const tierArr     = toArr(req.query.tier);
+  const cityArr     = toArr(req.query.city);
+  const categoryArr = toArr(req.query.category);
+  const limit = 20, offset = (Number(page) - 1) * limit;
   try {
     const sb = getClient();
     let q = sb.from('vv_vendors')
       .select('*, category:vv_categories(name), city:vv_cities(name)', { count: 'exact' });
-    if (status)   q = q.eq('status', status);
-    if (tier)     q = q.eq('membership_tier', tier);
-    if (city)     q = q.eq('city_id', city);
-    if (category) q = q.eq('category_id', category);
-    if (search)   q = q.or(`name.ilike.%${search}%,mobile.ilike.%${search}%`);
+    if (statusArr.length)   q = q.in('status', statusArr);
+    if (tierArr.length)     q = q.in('membership_tier', tierArr);
+    if (cityArr.length)     q = q.in('city_id', cityArr.map(Number));
+    if (categoryArr.length) q = q.in('category_id', categoryArr.map(Number));
+    if (search)             q = q.or(`name.ilike.%${search}%,mobile.ilike.%${search}%`);
     q = q.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
     const { data, count, error } = await q;
     if (error) throw new Error(error.message);
@@ -58,12 +64,12 @@ router.get('/', requireAuth, async (req, res) => {
     res.render('vendors', {
       title: 'All Vendors', vendors: (data || []).map(flatVendor),
       categories: categories || [], cities: cities || [],
-      filters: { status, tier, city, category, search },
+      filters: { status: statusArr, tier: tierArr, city: cityArr, category: categoryArr, search },
       pagination: { page: Number(page), limit, total: count || 0, pages: Math.ceil((count || 0) / limit) },
     });
   } catch (err) {
     req.flash('error', err.message);
-    res.render('vendors', { title: 'All Vendors', vendors: [], categories: [], cities: [], filters: {}, pagination: { page: 1, pages: 1, total: 0, limit: 20 } });
+    res.render('vendors', { title: 'All Vendors', vendors: [], categories: [], cities: [], filters: { status:[], tier:[], city:[], category:[], search:'' }, pagination: { page: 1, pages: 1, total: 0, limit: 20 } });
   }
 });
 
@@ -87,8 +93,8 @@ router.get('/add', requireAuth, async (req, res) => {
 });
 
 router.post('/add', requireAuth, upload.array('photos', 5), async (req, res) => {
-  const { name, full_address, mobile, whatsapp, category_id, city_id,
-    region_id, membership_tier, description, amount, status,
+  const { name, full_address, mobile, whatsapp, email, website, facebook_url, instagram_url, twitter_url,
+    category_id, city_id, region_id, membership_tier, description, amount, status,
     is_verified, is_trusted, is_trending, photo_urls } = req.body;
   if (!name || !mobile || !category_id || !city_id) {
     req.flash('error', 'Name, mobile, category, and city are required.');
@@ -98,6 +104,8 @@ router.post('/add', requireAuth, upload.array('photos', 5), async (req, res) => 
     const sb = getClient();
     const { data, error } = await sb.from('vv_vendors').insert({
       name, full_address: full_address || null, mobile, whatsapp: whatsapp || null,
+      email: email || null, website: website || null,
+      facebook_url: facebook_url || null, instagram_url: instagram_url || null, twitter_url: twitter_url || null,
       category_id: Number(category_id), city_id: Number(city_id),
       region_id: region_id ? Number(region_id) : null,
       membership_tier: membership_tier || 'basic',
@@ -127,6 +135,162 @@ router.post('/add', requireAuth, upload.array('photos', 5), async (req, res) => 
   }
 });
 
+// ── Export ────────────────────────────────────────────────────
+router.get('/export', requireAuth, async (req, res) => {
+  const { format = 'xlsx' } = req.query;
+  const toArr = (v) => !v ? [] : Array.isArray(v) ? v : [v];
+  const statusArr   = toArr(req.query.status);
+  const tierArr     = toArr(req.query.tier);
+  const cityArr     = toArr(req.query.city);
+  const categoryArr = toArr(req.query.category);
+  const search      = req.query.search || '';
+  try {
+    const sb = getClient();
+    let q = sb.from('vv_vendors')
+      .select('*, category:vv_categories(name), city:vv_cities(name)');
+    if (statusArr.length)   q = q.in('status', statusArr);
+    if (tierArr.length)     q = q.in('membership_tier', tierArr);
+    if (cityArr.length)     q = q.in('city_id', cityArr.map(Number));
+    if (categoryArr.length) q = q.in('category_id', categoryArr.map(Number));
+    if (search)             q = q.or(`name.ilike.%${search}%,mobile.ilike.%${search}%`);
+    q = q.order('created_at', { ascending: false });
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const rows = (data || []).map(v => ({
+      ID:             v.id,
+      Name:           v.name,
+      Mobile:         v.mobile,
+      WhatsApp:       v.whatsapp || '',
+      Email:          v.email || '',
+      Website:        v.website || '',
+      Category:       v.category?.name || '',
+      City:           v.city?.name || '',
+      Address:        v.full_address || '',
+      Tier:           v.membership_tier || 'basic',
+      Status:         v.status,
+      Rating:         v.rating || '',
+      'Rating Count': v.rating_count || 0,
+      'View Count':   v.view_count || 0,
+      Verified:       v.is_verified ? 'Yes' : 'No',
+      Trusted:        v.is_trusted  ? 'Yes' : 'No',
+      Trending:       v.is_trending ? 'Yes' : 'No',
+      Description:    v.description || '',
+      Amount:         v.amount || '',
+      Registered:     v.created_at ? new Date(v.created_at * 1000).toLocaleDateString('en-IN') : '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = Object.keys(rows[0] || {}).map(k => ({ wch: Math.max(k.length, 14) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Vendors');
+
+    const filename = `vendors_${new Date().toISOString().slice(0, 10)}`;
+    if (format === 'csv') {
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+      logAction(req.session.user.username, 'EXPORT_VENDORS', 'vv_vendors', null, { format, count: rows.length }, req.ip);
+      return res.send(csv);
+    }
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+    logAction(req.session.user.username, 'EXPORT_VENDORS', 'vv_vendors', null, { format, count: rows.length }, req.ip);
+    res.send(buf);
+  } catch (err) {
+    req.flash('error', 'Export failed: ' + err.message);
+    res.redirect('/vendors');
+  }
+});
+
+// ── Import ────────────────────────────────────────────────────
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = /\.(xlsx|xls|csv)$/i.test(file.originalname);
+    ok ? cb(null, true) : cb(new Error('Only .xlsx, .xls, or .csv files are allowed'));
+  },
+});
+
+router.post('/import', requireAuth, importUpload.single('file'), async (req, res) => {
+  if (!req.file) { req.flash('error', 'No file uploaded.'); return res.redirect('/vendors'); }
+  try {
+    const sb = getClient();
+    const wb = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!rows.length) { req.flash('error', 'File is empty or has no data rows.'); return res.redirect('/vendors'); }
+
+    const [{ data: catRows }, { data: cityRows }] = await Promise.all([
+      sb.from('vv_categories').select('id, name'),
+      sb.from('vv_cities').select('id, name'),
+    ]);
+    const catMap  = Object.fromEntries((catRows  || []).map(r => [r.name.toLowerCase().trim(), r.id]));
+    const cityMap = Object.fromEntries((cityRows || []).map(r => [r.name.toLowerCase().trim(), r.id]));
+
+    const validTiers  = ['basic', 'silver', 'gold', 'platinum'];
+    const validStatus = ['pending', 'approved', 'rejected'];
+    const now = Math.floor(Date.now() / 1000);
+    const toInsert = [], errors = [];
+
+    rows.forEach((row, i) => {
+      const rowNum = i + 2;
+      const name   = String(row['Name']   || row['name']   || '').trim();
+      const mobile = String(row['Mobile'] || row['mobile'] || '').trim();
+      if (!name)   { errors.push(`Row ${rowNum}: Name is required`);   return; }
+      if (!mobile) { errors.push(`Row ${rowNum}: Mobile is required`); return; }
+
+      const catName  = String(row['Category'] || row['category'] || '').toLowerCase().trim();
+      const cityName = String(row['City']     || row['city']     || '').toLowerCase().trim();
+      const category_id = catMap[catName]  || null;
+      const city_id     = cityMap[cityName] || null;
+      if (!category_id) { errors.push(`Row ${rowNum}: Unknown category "${row['Category'] || row['category']}"`); return; }
+      if (!city_id)     { errors.push(`Row ${rowNum}: Unknown city "${row['City'] || row['city']}"`); return; }
+
+      const tier   = validTiers.includes(String(row['Tier']   || '').toLowerCase()) ? String(row['Tier']).toLowerCase()   : 'basic';
+      const status = validStatus.includes(String(row['Status']|| '').toLowerCase()) ? String(row['Status']).toLowerCase() : 'pending';
+
+      toInsert.push({
+        name, mobile,
+        whatsapp:        String(row['WhatsApp']    || row['whatsapp']    || '').trim() || null,
+        email:           String(row['Email']       || row['email']       || '').trim() || null,
+        website:         String(row['Website']     || row['website']     || '').trim() || null,
+        full_address:    String(row['Address']     || row['full_address']|| '').trim() || null,
+        description:     String(row['Description'] || row['description'] || '').trim() || null,
+        amount:          row['Amount'] || null,
+        category_id, city_id,
+        membership_tier: tier,
+        status,
+        is_verified: String(row['Verified'] || '').toLowerCase() === 'yes' ? 1 : 0,
+        is_trusted:  String(row['Trusted']  || '').toLowerCase() === 'yes' ? 1 : 0,
+        is_trending: String(row['Trending'] || '').toLowerCase() === 'yes' ? 1 : 0,
+        created_at: now,
+      });
+    });
+
+    if (errors.length && !toInsert.length) {
+      req.flash('error', `Import failed — ${errors.length} error(s): ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? ` … and ${errors.length - 3} more` : ''}`);
+      return res.redirect('/vendors');
+    }
+
+    let inserted = 0;
+    for (let i = 0; i < toInsert.length; i += 100) {
+      const { error } = await sb.from('vv_vendors').insert(toInsert.slice(i, i + 100));
+      if (error) throw new Error(error.message);
+      inserted += Math.min(100, toInsert.length - i);
+    }
+
+    logAction(req.session.user.username, 'IMPORT_VENDORS', 'vv_vendors', null, { inserted, skipped: errors.length }, req.ip);
+    req.flash('success', `Imported ${inserted} vendor(s) successfully.` + (errors.length ? ` Skipped ${errors.length} row(s) with errors.` : ''));
+    res.redirect('/vendors');
+  } catch (err) {
+    req.flash('error', 'Import failed: ' + err.message);
+    res.redirect('/vendors');
+  }
+});
+
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const sb = getClient();
@@ -134,6 +298,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       { data: vendor, error: ve },
       { data: media }, { data: memberships }, { data: leads },
       { data: categories }, { data: cities }, { data: regions },
+      { data: reviews },
     ] = await Promise.all([
       sb.from('vv_vendors').select('*, category:vv_categories(name), city:vv_cities(name), region:vv_regions(name)').eq('id', req.params.id).single(),
       sb.from('vv_vendor_media').select('*').eq('vendor_id', req.params.id).order('created_at', { ascending: false }),
@@ -142,24 +307,28 @@ router.get('/:id', requireAuth, async (req, res) => {
       sb.from('vv_categories').select('*').order('name'),
       sb.from('vv_cities').select('*').order('name'),
       sb.from('vv_regions').select('*').order('name'),
+      sb.from('vv_reviews').select('*, media:vv_review_media(url)').eq('vendor_id', req.params.id).order('created_at', { ascending: false }),
     ]);
     if (ve || !vendor) { req.flash('error', 'Vendor not found.'); return res.redirect('/vendors'); }
     res.render('vendor-detail', {
       title: vendor.name, vendor: flatVendor(vendor),
       media: media || [], memberships: memberships || [], leads: leads || [],
       categories: categories || [], cities: cities || [], regions: regions || [],
+      reviews: reviews || [],
     });
   } catch (err) { req.flash('error', err.message); res.redirect('/vendors'); }
 });
 
 router.post('/:id/update', requireAuth, async (req, res) => {
-  const { name, full_address, mobile, whatsapp, category_id, city_id,
-    region_id, membership_tier, description, amount, status,
+  const { name, full_address, mobile, whatsapp, email, website, facebook_url, instagram_url, twitter_url,
+    category_id, city_id, region_id, membership_tier, description, amount, status,
     is_verified, is_trusted, is_trending, latitude, longitude } = req.body;
   try {
     const sb = getClient();
     const { error } = await sb.from('vv_vendors').update({
       name, full_address: full_address || null, mobile, whatsapp: whatsapp || null,
+      email: email || null, website: website || null,
+      facebook_url: facebook_url || null, instagram_url: instagram_url || null, twitter_url: twitter_url || null,
       category_id: Number(category_id), city_id: Number(city_id),
       region_id: region_id ? Number(region_id) : null,
       membership_tier, description: description || null, amount: amount || null, status,
@@ -270,6 +439,70 @@ router.post('/:id/membership', requireAuth, async (req, res) => {
     req.flash('success', `Membership (${tier}) recorded.`);
   } catch (err) { req.flash('error', err.message); }
   res.redirect(`/vendors/${req.params.id}`);
+});
+
+// ── Reviews ────────────────────────────────────────────────────
+
+// Approve a review
+router.post('/:id/reviews/:rid/approve', requireAuth, async (req, res) => {
+  try {
+    const sb = getClient();
+    const { error } = await sb.from('vv_reviews').update({ status: 'approved' })
+      .eq('id', req.params.rid).eq('vendor_id', req.params.id);
+    if (error) throw new Error(error.message);
+
+    // Recalculate vendor rating
+    const { data: stats } = await sb.from('vv_reviews')
+      .select('rating')
+      .eq('vendor_id', req.params.id)
+      .eq('status', 'approved');
+    if (stats?.length) {
+      const avg = stats.reduce((s, r) => s + r.rating, 0) / stats.length;
+      await sb.from('vv_vendors').update({
+        rating: Math.round(avg * 10) / 10,
+        rating_count: stats.length,
+      }).eq('id', req.params.id);
+    }
+    logAction(req.session.user.username, 'APPROVE_REVIEW', 'vv_reviews', req.params.rid, {}, req.ip);
+    req.flash('success', 'Review approved.');
+  } catch (err) { req.flash('error', err.message); }
+  res.redirect(`/vendors/${req.params.id}#reviews`);
+});
+
+// Reject a review
+router.post('/:id/reviews/:rid/reject', requireAuth, async (req, res) => {
+  try {
+    const sb = getClient();
+    const { error } = await sb.from('vv_reviews').update({ status: 'rejected' })
+      .eq('id', req.params.rid).eq('vendor_id', req.params.id);
+    if (error) throw new Error(error.message);
+    logAction(req.session.user.username, 'REJECT_REVIEW', 'vv_reviews', req.params.rid, {}, req.ip);
+    req.flash('success', 'Review rejected.');
+  } catch (err) { req.flash('error', err.message); }
+  res.redirect(`/vendors/${req.params.id}#reviews`);
+});
+
+// Delete a review
+router.post('/:id/reviews/:rid/delete', requireAuth, async (req, res) => {
+  try {
+    const sb = getClient();
+    await sb.from('vv_review_media').delete().eq('review_id', req.params.rid);
+    const { error } = await sb.from('vv_reviews').delete()
+      .eq('id', req.params.rid).eq('vendor_id', req.params.id);
+    if (error) throw new Error(error.message);
+
+    // Recalculate vendor rating
+    const { data: stats } = await sb.from('vv_reviews').select('rating')
+      .eq('vendor_id', req.params.id).eq('status', 'approved');
+    const avg = stats?.length ? stats.reduce((s, r) => s + r.rating, 0) / stats.length : 0;
+    await sb.from('vv_vendors').update({
+      rating: Math.round(avg * 10) / 10, rating_count: stats?.length || 0,
+    }).eq('id', req.params.id);
+
+    logAction(req.session.user.username, 'DELETE_REVIEW', 'vv_reviews', req.params.rid, {}, req.ip);
+    req.flash('success', 'Review deleted.');
+  } catch (err) { req.flash('error', err.message); }
+  res.redirect(`/vendors/${req.params.id}#reviews`);
 });
 
 module.exports = router;
